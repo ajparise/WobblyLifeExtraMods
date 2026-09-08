@@ -18,6 +18,7 @@ public sealed class RealisticCarCrashMod : BaseMod
     private static readonly Ref<bool> IgnoreLightStreetProps = new(true);
     private static readonly Ref<bool> BodyDeformation = new(true);
     private static readonly Ref<bool> MechanicalDamage = new(true);
+    private static readonly Ref<bool> PartSeparation = new(true);
     private static readonly Ref<string> Status = new("Realistic car crashes are disabled.");
     private static readonly List<RealisticCarCrashSensor> Cleanup = new();
     private static float nextVehicleScan;
@@ -60,18 +61,29 @@ public sealed class RealisticCarCrashMod : BaseMod
     [ModSetting(Order = 90, Min = 35f, Max = 160f, Label = "Wheel damage speed (km/h)")]
     public static Ref<float> WheelDamageSpeed = new(75f);
 
+    [ModSetting(Order = 100, Min = 8f, Max = 80f, Label = "Structure spring stiffness")]
+    public static Ref<float> StructureSpring = new(34f);
+
+    [ModSetting(Order = 110, Min = 1f, Max = 20f, Label = "Structure damping")]
+    public static Ref<float> StructureDamping = new(9f);
+
+    [ModSetting(Order = 120, Min = 70f, Max = 200f, Label = "Part separation speed (km/h)")]
+    public static Ref<float> PartSeparationSpeed = new(115f);
+
     public override Container BuildPanel(string id)
     {
         return new Container(id,
             new TextWrapped("RealisticCrashHelp",
                 "Enable this before driving. Direct impact speed determines vehicle damage and lost momentum. " +
-                "BeamNG-style impacts dent body meshes, accumulate mechanical damage, and can bend a nearby wheel. " +
+                "BeamNG-inspired impacts use spring-damped mesh deformation, accumulate mechanical damage, bend wheels, " +
+                "and can separate visible panels. " +
                 "Off-center collisions rotate the car, while sufficiently severe crashes ragdoll its occupants. " +
                 "Native vehicle destruction is synchronized when you are offline or hosting."),
             new Checkbox("Ragdoll occupants in severe crashes", true).WithValue(RagdollOccupants),
             new Checkbox("Ignore light roadside props", true).WithValue(IgnoreLightStreetProps),
             new Checkbox("BeamNG-style body deformation", true).WithValue(BodyDeformation),
             new Checkbox("Cumulative mechanical damage", true).WithValue(MechanicalDamage),
+            new Checkbox("Separate parts in extreme crashes", true).WithValue(PartSeparation),
             base.BuildPanel(id),
             new HStack("RealisticCrashActions",
                 ActionMenu(new Button("Enable realistic crashes", Enable), nameof(Enable)),
@@ -134,15 +146,17 @@ public sealed class RealisticCarCrashMod : BaseMod
     internal static bool ShouldIgnoreLightStreetProps => IgnoreLightStreetProps.Value;
     internal static bool ShouldDeformBody => BodyDeformation.Value;
     internal static bool ShouldApplyMechanicalDamage => MechanicalDamage.Value;
+    internal static bool ShouldSeparateParts => PartSeparation.Value;
 
     internal static void ReportCrash(float speedKmh, int damage, bool severe, string vehicleName,
-        float chassisDamage, bool dented, bool wheelBent)
+        float chassisDamage, bool dented, bool wheelBent, bool partSeparated)
     {
         var result = severe ? "SEVERE CRASH" : "Crash";
         var deformation = dented ? "; body dented" : string.Empty;
         var wheel = wheelBent ? "; wheel bent" : string.Empty;
+        var separated = partSeparated ? "; part separated" : string.Empty;
         Status.Value = $"{result}: {vehicleName} hit at {speedKmh:0} km/h; {damage:N0} damage; " +
-                       $"chassis {chassisDamage * 100f:0}%{deformation}{wheel}.";
+                       $"chassis {chassisDamage * 100f:0}%{deformation}{wheel}{separated}.";
         Plugin.Log?.LogInfo(Status.Value);
     }
 }
@@ -162,6 +176,7 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
     private float chassisDamage;
     private float steeringDamage;
     private float wobblePhase;
+    private readonly HashSet<Renderer> separatedRenderers = new();
 
     internal void Configure(PlayerVehicle target)
     {
@@ -206,9 +221,12 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
             steeringDamage = Mathf.Clamp01(steeringDamage + deformationSeverity * 0.22f);
         }
 
-        var dented = RealisticCarCrashMod.ShouldDeformBody && DeformBody(contact, deformationSeverity);
+        var dented = RealisticCarCrashMod.ShouldDeformBody && DeformBody(collision, deformationSeverity);
         var wheelBent = speedKmh >= Mathf.Clamp(RealisticCarCrashMod.WheelDamageSpeed.Value, 35f, 160f) &&
                         BendNearestWheel(contact.point, deformationSeverity);
+        var partSeparated = RealisticCarCrashMod.ShouldSeparateParts &&
+                            speedKmh >= Mathf.Clamp(RealisticCarCrashMod.PartSeparationSpeed.Value, 70f, 200f) &&
+                            SeparateNearestPart(contact.point, collision.relativeVelocity, deformationSeverity);
 
         var maximumDamage = Mathf.Clamp(Mathf.RoundToInt(RealisticCarCrashMod.MaximumDamage.Value), 5, 500);
         var damage = Mathf.Clamp(Mathf.RoundToInt(
@@ -225,7 +243,7 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
             ? "vehicle"
             : vehicle.name.Replace("(Clone)", string.Empty).Trim();
         RealisticCarCrashMod.ReportCrash(speedKmh, damage, severe, displayName,
-            chassisDamage, dented, wheelBent);
+            chassisDamage, dented, wheelBent, partSeparated);
     }
 
     private void FixedUpdate()
@@ -246,7 +264,7 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         }
     }
 
-    private bool DeformBody(ContactPoint contact, float severity)
+    private bool DeformBody(Collision collision, float severity)
     {
         if (severity <= 0.01f) return false;
 
@@ -258,37 +276,24 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         foreach (var filter in vehicle.GetComponentsInChildren<MeshFilter>(true))
         {
             if (!filter || !filter.sharedMesh || IsWheelOrUtilityPart(filter.transform)) continue;
-            if (meshCount >= 5) break;
+            // Keep the soft-body approximation bounded so complex workshop vehicles do not cause frame spikes.
+            if (meshCount >= 3) break;
 
             try
             {
-                var mesh = filter.mesh;
-                if (!mesh || mesh.vertexCount == 0 || mesh.vertexCount > 80000) continue;
+                var softBody = filter.GetComponent<BeamNgSoftBodyMesh>() ??
+                               filter.gameObject.AddComponent<BeamNgSoftBodyMesh>();
+                if (!softBody.TryInitialize(filter)) continue;
 
-                var localPoint = filter.transform.InverseTransformPoint(contact.point);
-                var scale = filter.transform.lossyScale;
-                var averageScale = Mathf.Max(0.01f, (Mathf.Abs(scale.x) + Mathf.Abs(scale.y) + Mathf.Abs(scale.z)) / 3f);
-                var localRadius = radiusWorld / averageScale;
-                if (mesh.bounds.SqrDistance(localPoint) > localRadius * localRadius) continue;
-
-                var localNormal = filter.transform.InverseTransformDirection(contact.normal).normalized;
-                var localDepth = depthWorld / averageScale;
-                var vertices = mesh.vertices;
                 var changed = false;
-                for (var index = 0; index < vertices.Length; index++)
+                for (var contactIndex = 0; contactIndex < collision.contactCount; contactIndex++)
                 {
-                    var distance = Vector3.Distance(vertices[index], localPoint);
-                    if (distance >= localRadius) continue;
-                    var falloff = 1f - distance / localRadius;
-                    falloff *= falloff;
-                    vertices[index] += localNormal * (localDepth * falloff);
-                    changed = true;
+                    var contact = collision.GetContact(contactIndex);
+                    changed |= softBody.ApplyImpact(contact.point, contact.normal, radiusWorld, depthWorld,
+                        Mathf.Lerp(0.15f, 0.7f, severity));
                 }
 
                 if (!changed) continue;
-                mesh.vertices = vertices;
-                mesh.RecalculateBounds();
-                mesh.RecalculateNormals();
                 deformedAny = true;
                 meshCount++;
             }
@@ -299,6 +304,44 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         }
 
         return deformedAny;
+    }
+
+    private bool SeparateNearestPart(Vector3 impactPoint, Vector3 impactVelocity, float severity)
+    {
+        var renderer = vehicle.GetComponentsInChildren<MeshRenderer>(true)
+            .Where(candidate => candidate && candidate.enabled && !separatedRenderers.Contains(candidate) &&
+                                IsBreakablePanel(candidate.transform))
+            .OrderBy(candidate => (candidate.bounds.ClosestPoint(impactPoint) - impactPoint).sqrMagnitude)
+            .FirstOrDefault();
+        if (!renderer || (renderer.bounds.ClosestPoint(impactPoint) - impactPoint).sqrMagnitude > 6.25f)
+            return false;
+
+        var sourceFilter = renderer.GetComponent<MeshFilter>();
+        if (!sourceFilter || !sourceFilter.sharedMesh) return false;
+
+        var debris = new GameObject($"ExtraMods Crash Part {renderer.name}");
+        debris.transform.position = renderer.transform.position;
+        debris.transform.rotation = renderer.transform.rotation;
+        debris.transform.localScale = renderer.transform.lossyScale;
+
+        var debrisFilter = debris.AddComponent<MeshFilter>();
+        debrisFilter.sharedMesh = sourceFilter.sharedMesh;
+        var debrisRenderer = debris.AddComponent<MeshRenderer>();
+        debrisRenderer.sharedMaterials = renderer.sharedMaterials;
+        var collider = debris.AddComponent<BoxCollider>();
+        collider.center = sourceFilter.sharedMesh.bounds.center;
+        collider.size = sourceFilter.sharedMesh.bounds.size;
+        var debrisBody = debris.AddComponent<Rigidbody>();
+        debrisBody.mass = Mathf.Lerp(3f, 12f, severity);
+        debrisBody.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        debrisBody.velocity = body.GetPointVelocity(impactPoint) - impactVelocity.normalized * Mathf.Lerp(1f, 5f, severity);
+        debrisBody.angularVelocity = UnityEngine.Random.onUnitSphere * Mathf.Lerp(3f, 12f, severity);
+
+        renderer.enabled = false;
+        separatedRenderers.Add(renderer);
+        UnityEngine.Object.Destroy(debris, 25f);
+        chassisDamage = Mathf.Clamp01(chassisDamage + 0.12f);
+        return true;
     }
 
     private bool BendNearestWheel(Vector3 impactPoint, float severity)
@@ -329,6 +372,15 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         var normalized = NormalizeName(candidate.name);
         return normalized.Contains("wheel") || normalized.Contains("tire") || normalized.Contains("tyre") ||
                normalized.Contains("rim");
+    }
+
+    private static bool IsBreakablePanel(Transform candidate)
+    {
+        var normalized = NormalizeName(candidate.name);
+        return normalized.Contains("bumper") || normalized.Contains("fender") || normalized.Contains("wing") ||
+               normalized.Contains("hood") || normalized.Contains("bonnet") || normalized.Contains("boot") ||
+               normalized.Contains("trunk") || normalized.Contains("door") || normalized.Contains("mirror") ||
+               IsWheelPart(candidate);
     }
 
     private bool IsLightRoadsideObstacle(Collider otherCollider)
@@ -403,6 +455,127 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
             var throwDirection = (-impactVelocity.normalized + Vector3.up * 0.35f).normalized;
             playerBody.SetRagdollVelocity(throwDirection * Mathf.Lerp(4f, 12f, severity));
         }
+    }
+}
+
+/// <summary>
+/// Lightweight node-and-spring approximation: affected mesh vertices carry velocity, spring toward a permanently
+/// deformed target, and lose oscillation through damping. This is visual and intentionally does not replace Unity's
+/// rigid vehicle chassis.
+/// </summary>
+internal sealed class BeamNgSoftBodyMesh : MonoBehaviour
+{
+    private MeshFilter filter;
+    private Mesh mesh;
+    private Vector3[] restVertices;
+    private Vector3[] workingVertices;
+    private Vector3[] offsets;
+    private Vector3[] targetOffsets;
+    private Vector3[] velocities;
+    private bool[] affectedFlags;
+    private readonly List<int> affectedIndices = new();
+    private float activeUntil;
+    private bool initialized;
+    private int normalUpdateCounter;
+
+    internal bool TryInitialize(MeshFilter target)
+    {
+        if (initialized) return mesh && restVertices != null;
+        initialized = true;
+        filter = target;
+
+        try
+        {
+            mesh = filter.mesh;
+            if (!mesh || mesh.vertexCount == 0 || mesh.vertexCount > 30000) return false;
+            restVertices = mesh.vertices;
+            workingVertices = new Vector3[restVertices.Length];
+            offsets = new Vector3[restVertices.Length];
+            targetOffsets = new Vector3[restVertices.Length];
+            velocities = new Vector3[restVertices.Length];
+            affectedFlags = new bool[restVertices.Length];
+            Array.Copy(restVertices, workingVertices, restVertices.Length);
+            mesh.MarkDynamic();
+            enabled = false;
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    internal bool ApplyImpact(Vector3 worldPoint, Vector3 worldNormal, float radiusWorld,
+        float permanentDepthWorld, float elasticKick)
+    {
+        if (!initialized || !mesh || restVertices == null) return false;
+
+        var scale = transform.lossyScale;
+        var averageScale = Mathf.Max(0.01f,
+            (Mathf.Abs(scale.x) + Mathf.Abs(scale.y) + Mathf.Abs(scale.z)) / 3f);
+        var localPoint = transform.InverseTransformPoint(worldPoint);
+        var localNormal = transform.InverseTransformDirection(worldNormal).normalized;
+        var localRadius = radiusWorld / averageScale;
+        if (mesh.bounds.SqrDistance(localPoint) > localRadius * localRadius) return false;
+
+        var localDepth = permanentDepthWorld / averageScale;
+        var changed = false;
+        for (var index = 0; index < restVertices.Length; index++)
+        {
+            var currentVertex = restVertices[index] + offsets[index];
+            var distance = Vector3.Distance(currentVertex, localPoint);
+            if (distance >= localRadius) continue;
+
+            var falloff = 1f - distance / localRadius;
+            falloff *= falloff;
+            var permanentChange = localNormal * (localDepth * falloff);
+            targetOffsets[index] += permanentChange;
+            velocities[index] += localNormal * (localDepth * elasticKick * falloff * 12f);
+
+            if (!affectedFlags[index])
+            {
+                affectedFlags[index] = true;
+                affectedIndices.Add(index);
+            }
+            changed = true;
+        }
+
+        if (!changed) return false;
+        activeUntil = Time.time + 3f;
+        enabled = true;
+        return true;
+    }
+
+    private void FixedUpdate()
+    {
+        if (!mesh || affectedIndices.Count == 0)
+        {
+            enabled = false;
+            return;
+        }
+
+        var deltaTime = Mathf.Min(Time.fixedDeltaTime, 0.033f);
+        var spring = Mathf.Clamp(RealisticCarCrashMod.StructureSpring.Value, 8f, 80f);
+        var damping = Mathf.Clamp(RealisticCarCrashMod.StructureDamping.Value, 1f, 20f);
+        var moving = false;
+
+        foreach (var index in affectedIndices)
+        {
+            var acceleration = (targetOffsets[index] - offsets[index]) * spring - velocities[index] * damping;
+            velocities[index] += acceleration * deltaTime;
+            offsets[index] += velocities[index] * deltaTime;
+            workingVertices[index] = restVertices[index] + offsets[index];
+
+            if ((targetOffsets[index] - offsets[index]).sqrMagnitude > 0.000001f ||
+                velocities[index].sqrMagnitude > 0.000001f)
+                moving = true;
+        }
+
+        mesh.vertices = workingVertices;
+        mesh.RecalculateBounds();
+        if (++normalUpdateCounter % 3 == 0) mesh.RecalculateNormals();
+
+        if (!moving && Time.time >= activeUntil) enabled = false;
     }
 }
 
