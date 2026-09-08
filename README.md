@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.8.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.7.1 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -19,7 +19,6 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Shrink Ray:** switch between shrink and grow modes with Q, restore individual targets, and resize world objects including vehicles, NPCs, buildings, trees, and roads.
 - **Every Artifact Spawner:** spawns one copy of all 69 genuine networked museum artifacts in organized rows near the player.
 - **Realistic Car Crashes:** adds spring-damped permanent mesh deformation, extreme-impact part separation, cumulative mechanical damage, bent-wheel wobble, impact-speed damage, momentum loss, off-center spin, and severe-crash occupant ragdolls.
-- **Real-Life Car Models:** replaces road-car visuals with six embedded CC0 sedan, compact, race, taxi, and police-car models while retaining Wobbly Life's controls and physics.
 
 ## Requirements
 
@@ -70,8 +69,6 @@ For police chases, open **Extra Mods → Police Chase Mode** and choose **Enable
 
 For realistic crashes, open **Extra Mods → Realistic Car Crashes** and choose **Enable realistic crashes**. Road vehicle impacts below the minimum threshold retain the game's normal behavior. Faster direct impacts apply capped native vehicle damage and drive nearby mesh vertices through a spring-and-damper response toward a permanently deformed position. The deformation system snaps collider impacts to the nearest visible mesh vertex and uses a permanent renderer-level crumple fallback for stock meshes that Unity does not expose to CPU editing. Extreme impacts can separate recognizable panels or wheels, while damaged wheels visibly bend, wobble, and collapse. Damage also accumulates into rolling resistance and steering instability. Light posts, traffic lights, signs, bollards, and other low-mass street props remain minor obstacles. This follows BeamNG's spring, damping, permanent-deformation, and break-strength concepts, but remains a visual Unity approximation rather than a full node-and-beam vehicle simulation. The deformation and separation thresholds are adjustable. Synchronized vehicle damage requires an offline game or the lobby host.
 
-For real-world-style cars, open **Extra Mods → Real-Life Car Models** and choose **Enable real-life models**. Automatic mode matches police and taxi vehicles and distributes standard sedan, compact, and race-car bodies among other road cars. You can instead force one model onto every eligible car and adjust its yaw or size. This changes only rendering: the original seats, characters, vehicle controller, colliders, and network object remain active. Two-wheelers, scooters, trains, boats, and aircraft are excluded. The six embedded OBJ models come from the Quaternius Cars Pack under CC0; see `Assets/RealCars/LICENSE.md`.
-
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -86,4 +83,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.8.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.7.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
