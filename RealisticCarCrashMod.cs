@@ -15,6 +15,7 @@ public sealed class RealisticCarCrashMod : BaseMod
 {
     private static readonly Ref<bool> EnabledState = new();
     private static readonly Ref<bool> RagdollOccupants = new(true);
+    private static readonly Ref<bool> IgnoreLightStreetProps = new(true);
     private static readonly Ref<string> Status = new("Realistic car crashes are disabled.");
     private static readonly List<RealisticCarCrashSensor> Cleanup = new();
     private static float nextVehicleScan;
@@ -44,6 +45,10 @@ public sealed class RealisticCarCrashMod : BaseMod
     [ModSetting(Order = 50, Min = 0f, Max = 8f, Label = "Off-center crash spin")]
     public static Ref<float> CrashSpin = new(2.4f);
 
+    [ModSetting(Order = 60, Min = 5f, Max = 500f, Label = "Maximum damage per crash",
+        Description = "Prevents a single ordinary collision from instantly destroying the vehicle.")]
+    public static Ref<float> MaximumDamage = new(75f);
+
     public override Container BuildPanel(string id)
     {
         return new Container(id,
@@ -52,6 +57,7 @@ public sealed class RealisticCarCrashMod : BaseMod
                 "Off-center collisions rotate the car, while sufficiently severe crashes ragdoll its occupants. " +
                 "Native vehicle destruction is synchronized when you are offline or hosting."),
             new Checkbox("Ragdoll occupants in severe crashes", true).WithValue(RagdollOccupants),
+            new Checkbox("Ignore light roadside props", true).WithValue(IgnoreLightStreetProps),
             base.BuildPanel(id),
             new HStack("RealisticCrashActions",
                 ActionMenu(new Button("Enable realistic crashes", Enable), nameof(Enable)),
@@ -111,6 +117,7 @@ public sealed class RealisticCarCrashMod : BaseMod
     }
 
     internal static bool ShouldRagdollOccupants => RagdollOccupants.Value;
+    internal static bool ShouldIgnoreLightStreetProps => IgnoreLightStreetProps.Value;
 
     internal static void ReportCrash(float speedKmh, int damage, bool severe, string vehicleName)
     {
@@ -122,6 +129,12 @@ public sealed class RealisticCarCrashMod : BaseMod
 
 internal sealed class RealisticCarCrashSensor : MonoBehaviour
 {
+    private static readonly string[] LightStreetPropNames =
+    {
+        "lightpost", "streetlight", "trafficlight", "lamppost", "lampost", "roadsign", "signpost",
+        "bollard", "trafficcone", "parkingmeter", "mailbox", "trashcan", "rubbishbin", "firehydrant"
+    };
+
     private PlayerVehicle vehicle;
     private Rigidbody body;
     private PlayerVehicleDestructable destructable;
@@ -147,6 +160,14 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         var minimum = Mathf.Clamp(RealisticCarCrashMod.MinimumCrashSpeed.Value, 5f, 80f);
         if (speedKmh < minimum) return;
 
+        // Breakaway street furniture should bend or fly away without being interpreted as a wall.
+        // Let the game's ordinary collision/destruction code handle these contacts and add no car damage.
+        if (RealisticCarCrashMod.ShouldIgnoreLightStreetProps && IsLightRoadsideObstacle(collision.collider))
+        {
+            nextCrashTime = Time.unscaledTime + 0.15f;
+            return;
+        }
+
         nextCrashTime = Time.unscaledTime + 0.35f;
         var severeThreshold = Mathf.Max(minimum + 5f,
             Mathf.Clamp(RealisticCarCrashMod.SevereCrashSpeed.Value, 30f, 160f));
@@ -155,9 +176,10 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
 
         ApplyCrashPhysics(contact, severity);
 
+        var maximumDamage = Mathf.Clamp(Mathf.RoundToInt(RealisticCarCrashMod.MaximumDamage.Value), 5, 500);
         var damage = Mathf.Clamp(Mathf.RoundToInt(
             (speedKmh - minimum) * Mathf.Clamp(RealisticCarCrashMod.DamageMultiplier.Value, 0.2f, 8f)),
-            1, short.MaxValue);
+            1, maximumDamage);
 
         if (destructable && PropSpawnManager.IsServer)
             destructable.ServerDamage((short)damage, false, false);
@@ -169,6 +191,46 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
             ? "vehicle"
             : vehicle.name.Replace("(Clone)", string.Empty).Trim();
         RealisticCarCrashMod.ReportCrash(speedKmh, damage, severe, displayName);
+    }
+
+    private bool IsLightRoadsideObstacle(Collider otherCollider)
+    {
+        if (!otherCollider) return false;
+        if (otherCollider.GetComponentInParent<PlayerVehicle>()) return false;
+
+        // Characters are soft collision targets too; hitting one must not behave like hitting concrete.
+        if (otherCollider.GetComponentInParent<PlayerCharacter>() ||
+            otherCollider.GetComponentInParent<PlayerNPCController>())
+            return true;
+
+        var otherBody = otherCollider.attachedRigidbody;
+        if (otherBody && otherBody != body && !otherBody.isKinematic)
+        {
+            var carMass = Mathf.Max(1f, body.mass);
+            if (otherBody.mass <= carMass * 0.2f) return true;
+        }
+
+        var current = otherCollider.transform;
+        for (var depth = 0; current && depth < 8; depth++, current = current.parent)
+        {
+            var normalizedName = NormalizeName(current.name);
+            if (LightStreetPropNames.Any(normalizedName.Contains)) return true;
+
+            foreach (var component in current.GetComponents<MonoBehaviour>())
+            {
+                if (!component) continue;
+                var normalizedType = NormalizeName(component.GetType().Name);
+                if (LightStreetPropNames.Any(normalizedType.Contains)) return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string NormalizeName(string value)
+    {
+        if (string.IsNullOrEmpty(value)) return string.Empty;
+        return new string(value.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
     }
 
     private void ApplyCrashPhysics(ContactPoint contact, float severity)

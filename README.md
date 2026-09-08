@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.5.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.5.1 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -67,7 +67,7 @@ For pedestrians, open **Extra Mods → Street NPC Population** after entering a 
 
 For police chases, open **Extra Mods → Police Chase Mode** and choose **Enable police chase**. Running into Wobblies at speed, striking NPCs with the paintball gun, heavy gun, or wind cannon, and driving above the configured speed limit adds wanted heat. The one-to-five-star level determines how many recognizable blue-uniformed officers spawn on reachable paths and pursue the player; higher levels also make them faster. After the escape delay, heat decays until the officers give up. Reaching the player triggers an arrest and optional respawn. Speed limit, officers per star, police speed, escape timing, spawn distance, and arrest distance are adjustable. Police are local/session-only and can be cleared or removed from the panel.
 
-For realistic crashes, open **Extra Mods → Realistic Car Crashes** and choose **Enable realistic crashes**. Road vehicle impacts below the minimum threshold retain the game's normal behavior. Faster direct impacts apply proportional native vehicle damage and remove forward momentum, while off-center contact adds rotation based on the collision point. At the severe-crash threshold, occupants ragdoll and receive impact velocity. Minimum and severe speeds, damage, momentum loss, spin, and occupant ragdolls are adjustable. Synchronized vehicle damage requires an offline game or the lobby host.
+For realistic crashes, open **Extra Mods → Realistic Car Crashes** and choose **Enable realistic crashes**. Road vehicle impacts below the minimum threshold retain the game's normal behavior. Faster direct impacts apply capped native vehicle damage and remove forward momentum, while off-center contact adds rotation based on the collision point. Light posts, traffic lights, signs, bollards, and other low-mass street props are treated as minor obstacles and do not add crash damage. At the severe-crash threshold, occupants ragdoll and receive impact velocity. Minimum and severe speeds, damage, damage cap, momentum loss, spin, minor-prop filtering, and occupant ragdolls are adjustable. Synchronized vehicle damage requires an offline game or the lobby host.
 
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
@@ -83,4 +83,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.5.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.5.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
