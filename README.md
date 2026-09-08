@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.7.1 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.8.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -19,6 +19,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Shrink Ray:** switch between shrink and grow modes with Q, restore individual targets, and resize world objects including vehicles, NPCs, buildings, trees, and roads.
 - **Every Artifact Spawner:** spawns one copy of all 69 genuine networked museum artifacts in organized rows near the player.
 - **Realistic Car Crashes:** adds spring-damped permanent mesh deformation, extreme-impact part separation, cumulative mechanical damage, bent-wheel wobble, impact-speed damage, momentum loss, off-center spin, and severe-crash occupant ragdolls.
+- **Proximity Mine Dropper:** adds a $100 chest item to every clothing shop; while wearing it, D drops an armed mine that launches Wobblies, instantly destroys cars without leaving rusty wrecks, and despawns when left behind.
 
 ## Requirements
 
@@ -69,6 +70,8 @@ For police chases, open **Extra Mods → Police Chase Mode** and choose **Enable
 
 For realistic crashes, open **Extra Mods → Realistic Car Crashes** and choose **Enable realistic crashes**. Road vehicle impacts below the minimum threshold retain the game's normal behavior. Faster direct impacts apply capped native vehicle damage and drive nearby mesh vertices through a spring-and-damper response toward a permanently deformed position. The deformation system snaps collider impacts to the nearest visible mesh vertex and uses a permanent renderer-level crumple fallback for stock meshes that Unity does not expose to CPU editing. Extreme impacts can separate recognizable panels or wheels, while damaged wheels visibly bend, wobble, and collapse. Damage also accumulates into rolling resistance and steering instability. Light posts, traffic lights, signs, bollards, and other low-mass street props remain minor obstacles. This follows BeamNG's spring, damping, permanent-deformation, and break-strength concepts, but remains a visual Unity approximation rather than a full node-and-beam vehicle simulation. The deformation and separation thresholds are adjustable. Synchronized vehicle damage requires an offline game or the lobby host.
 
+For proximity mines, open **Extra Mods → Proximity Mine Dropper** after entering a save and choose **Enable and add to shops**. Visit any clothing shop, open the chest/top category, buy the dark green Mine Dropper item for $100, and keep it equipped. Close F2 and press **D** to place a mine behind your Wobbly or current vehicle. After its safety delay, a nearby Wobbly is ragdolled and launched upward; a nearby car receives maximum damage immediately and is then network-destroyed before the game's delayed rusty replacement can spawn. Mines automatically disappear past the configured player distance and the oldest is recycled at the active-mine limit. Mine effects require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -83,4 +86,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.7.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.8.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

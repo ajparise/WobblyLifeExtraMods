@@ -3,7 +3,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>WobblyLifeExtraMods</AssemblyName>
     <RootNamespace>WobblyLifeExtraMods</RootNamespace>
-    <Version>1.7.1</Version>
+    <Version>1.8.0</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
   </PropertyGroup>
@@ -51,6 +51,10 @@
     </Reference>
     <Reference Include="Game">
       <HintPath>$(ManagedDir)/Game.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="ModWobblyLife">
+      <HintPath>$(ManagedDir)/ModWobblyLife.dll</HintPath>
       <Private>false</Private>
     </Reference>
     <Reference Include="Utils">
