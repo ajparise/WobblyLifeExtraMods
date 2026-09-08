@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.8.1 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.9.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -20,6 +20,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Every Artifact Spawner:** spawns one copy of all 69 genuine networked museum artifacts in organized rows near the player.
 - **Realistic Car Crashes:** adds spring-damped permanent mesh deformation, extreme-impact part separation, cumulative mechanical damage, bent-wheel wobble, impact-speed damage, momentum loss, off-center spin, and severe-crash occupant ragdolls.
 - **Proximity Mine Dropper:** adds a $100 chest item to every clothing shop; while wearing it, Q drops an armed mine that launches Wobblies, instantly destroys cars without leaving rusty wrecks, and despawns when left behind.
+- **Laser Eyes:** equippable twin eye beams fired with Q that instantly destroy cars, Wobblies, bombs, breakable scenery, and networked physics props.
 
 ## Requirements
 
@@ -72,6 +73,8 @@ For realistic crashes, open **Extra Mods → Realistic Car Crashes** and choose 
 
 For proximity mines, open **Extra Mods → Proximity Mine Dropper** after entering a save and choose **Enable and add to shops**. Visit any clothing shop, open the chest/top category, buy the dark green Mine Dropper item for $100, and keep it equipped. Close F2 and press **Q** to place a mine behind your Wobbly or current vehicle. After its safety delay, a nearby Wobbly is ragdolled and launched upward; a nearby car receives maximum damage immediately and is then network-destroyed before the game's delayed rusty replacement can spawn. Mines automatically disappear past the configured player distance and the oldest is recycled at the active-mine limit. Mine effects require an offline game or the lobby host.
 
+For laser eyes, open **Extra Mods → Laser Eyes**, choose **Equip laser eyes**, and close F2. Aim with the red crosshair and press **Q** to fire twin beams from the Wobbly's head. Vehicles receive maximum damage and are removed before creating rusty wrecks, players are exploded through the native death/respawn flow, NPCs are launched, bombs detonate without waiting for their fuse, and dynamic props use synchronized game destruction. Breakable scenery receives the game's native explosion event. Terrain and critical map roots are deliberately protected. Equipping laser eyes temporarily takes priority over the mine dropper's Q input. Destructive effects require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -86,4 +89,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.8.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.9.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
