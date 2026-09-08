@@ -3,7 +3,7 @@
     <TargetFramework>net472</TargetFramework>
     <AssemblyName>WobblyLifeExtraMods</AssemblyName>
     <RootNamespace>WobblyLifeExtraMods</RootNamespace>
-    <Version>1.4.3</Version>
+    <Version>1.5.0</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
   </PropertyGroup>
