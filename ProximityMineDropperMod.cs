@@ -40,7 +40,7 @@ public sealed class ProximityMineDropperMod : BaseMod
 
     public override string Name => "Proximity Mine Dropper";
     public override string Description =>
-        "Adds a $100 Mine Dropper chest item to clothing stores; wear it and press D to drop proximity mines.";
+        "Adds a $100 Mine Dropper chest item to clothing stores; wear it and press Q to drop proximity mines.";
     public override ModsWindow ModsWindow => lstwoMODS_WobblyLife.Plugin.ExtraModsWindow;
 
     [ModSetting(Order = 10, Min = 0.4f, Max = 3f, Label = "Mine trigger radius")]
@@ -63,7 +63,7 @@ public sealed class ProximityMineDropperMod : BaseMod
         return new Container(id,
             new TextWrapped("MineDropperHelp",
                 "Enable the mod, then buy the Mine Dropper chest item for $100 from any clothing shop and wear it. " +
-                "Close F2 and press D to drop a mine. It arms after a short safety delay, launches Wobblies skyward, " +
+                "Close F2 and press Q to drop a mine. It arms after a short safety delay, launches Wobblies skyward, " +
                 "instantly destroys cars without creating a rusty replacement, and despawns when left behind. Host/offline only."),
             base.BuildPanel(id),
             new HStack("MineDropperActions",
@@ -90,7 +90,7 @@ public sealed class ProximityMineDropperMod : BaseMod
         EnsureClothingRegistered();
         Status.Value = clothingReference == null
             ? "Mine Dropper enabled. Preparing the $100 chest item for every clothing shop..."
-            : "Mine Dropper enabled. Buy and wear its $100 chest item, then press D to drop a mine.";
+            : "Mine Dropper enabled. Buy and wear its $100 chest item, then press Q to drop a mine.";
     }
 
     [ModAction(ShowInUI = false)]
@@ -131,7 +131,7 @@ public sealed class ProximityMineDropperMod : BaseMod
 
         RestoreSavedClothingIfNeeded(controller, character);
         CleanupMineSet();
-        if (Cursor.visible || !Input.GetKeyDown(KeyCode.D)) return;
+        if (Cursor.visible || !Input.GetKeyDown(KeyCode.Q)) return;
 
         if (!PropSpawnManager.IsServer)
         {
@@ -142,7 +142,7 @@ public sealed class ProximityMineDropperMod : BaseMod
         var customize = character.GetPlayerCharacterCustomize();
         if (!customize || !customize.IsWearing(ClothingGuid))
         {
-            Status.Value = "Buy and wear the $100 Mine Dropper chest item before pressing D.";
+            Status.Value = "Buy and wear the $100 Mine Dropper chest item before pressing Q.";
             return;
         }
 
