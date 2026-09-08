@@ -67,8 +67,8 @@ public sealed class RealisticCarCrashMod : BaseMod
     [ModSetting(Order = 110, Min = 1f, Max = 20f, Label = "Structure damping")]
     public static Ref<float> StructureDamping = new(9f);
 
-    [ModSetting(Order = 120, Min = 70f, Max = 200f, Label = "Part separation speed (km/h)")]
-    public static Ref<float> PartSeparationSpeed = new(115f);
+    [ModSetting(Order = 120, Min = 55f, Max = 180f, Label = "Part separation speed (km/h)")]
+    public static Ref<float> PartSeparationSpeed = new(85f);
 
     public override Container BuildPanel(string id)
     {
@@ -185,6 +185,9 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         body = movement ? movement.GetRigidbody() : vehicle.GetComponent<Rigidbody>();
         destructable = vehicle.GetComponent<PlayerVehicleDestructable>();
         wobblePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
+        Plugin.Log?.LogInfo($"Crash monitor attached to '{vehicle.name}': " +
+                            $"{vehicle.GetComponentsInChildren<MeshFilter>(true).Length} mesh filters, " +
+                            $"{vehicle.GetComponentsInChildren<Renderer>(true).Length} renderers.");
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -225,7 +228,7 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         var wheelBent = speedKmh >= Mathf.Clamp(RealisticCarCrashMod.WheelDamageSpeed.Value, 35f, 160f) &&
                         BendNearestWheel(contact.point, deformationSeverity);
         var partSeparated = RealisticCarCrashMod.ShouldSeparateParts &&
-                            speedKmh >= Mathf.Clamp(RealisticCarCrashMod.PartSeparationSpeed.Value, 70f, 200f) &&
+                            speedKmh >= Mathf.Clamp(RealisticCarCrashMod.PartSeparationSpeed.Value, 55f, 180f) &&
                             SeparateNearestPart(contact.point, collision.relativeVelocity, deformationSeverity);
 
         var maximumDamage = Mathf.Clamp(Mathf.RoundToInt(RealisticCarCrashMod.MaximumDamage.Value), 5, 500);
@@ -273,7 +276,9 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         var deformedAny = false;
         var meshCount = 0;
 
-        foreach (var filter in vehicle.GetComponentsInChildren<MeshFilter>(true))
+        var impactPoint = collision.GetContact(0).point;
+        foreach (var filter in vehicle.GetComponentsInChildren<MeshFilter>(true)
+                     .OrderBy(candidate => DistanceToRenderer(candidate, impactPoint)))
         {
             if (!filter || !filter.sharedMesh || IsWheelOrUtilityPart(filter.transform)) continue;
             // Keep the soft-body approximation bounded so complex workshop vehicles do not cause frame spikes.
@@ -303,7 +308,34 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
             }
         }
 
-        return deformedAny;
+        // Stock vehicles can use meshes that are not CPU-readable. In that case, permanently crumple the nearest
+        // independent visual transform so the collision still creates a visible body-shape change.
+        return deformedAny || ApplyRendererCrumple(collision.GetContact(0), severity);
+    }
+
+    private bool ApplyRendererCrumple(ContactPoint contact, float severity)
+    {
+        var renderer = vehicle.GetComponentsInChildren<Renderer>(true)
+            .Where(candidate => candidate && candidate.transform != vehicle.transform &&
+                                !IsWheelOrUtilityPart(candidate.transform))
+            .OrderBy(candidate => (candidate.bounds.ClosestPoint(contact.point) - contact.point).sqrMagnitude)
+            .FirstOrDefault();
+        if (!renderer) return false;
+
+        var crumple = renderer.GetComponent<BeamNgRendererCrumple>() ??
+                      renderer.gameObject.AddComponent<BeamNgRendererCrumple>();
+        crumple.ApplyImpact(contact.normal,
+            Mathf.Clamp(RealisticCarCrashMod.DentDepth.Value, 0.02f, 0.8f) * Mathf.Max(0.2f, severity));
+        return true;
+    }
+
+    private static float DistanceToRenderer(MeshFilter filter, Vector3 point)
+    {
+        if (!filter) return float.MaxValue;
+        var renderer = filter.GetComponent<Renderer>();
+        return renderer
+            ? (renderer.bounds.ClosestPoint(point) - point).sqrMagnitude
+            : (filter.transform.position - point).sqrMagnitude;
     }
 
     private bool SeparateNearestPart(Vector3 impactPoint, Vector3 impactVelocity, float severity)
@@ -458,6 +490,38 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
     }
 }
 
+/// <summary>Guaranteed deformation fallback for vehicle visuals whose mesh data cannot be edited at runtime.</summary>
+internal sealed class BeamNgRendererCrumple : MonoBehaviour
+{
+    private bool initialized;
+    private Vector3 baseLocalPosition;
+    private Vector3 baseLocalScale;
+    private Vector3 permanentOffset;
+    private Vector3 scaleCompression;
+
+    internal void ApplyImpact(Vector3 worldNormal, float depth)
+    {
+        if (!initialized)
+        {
+            initialized = true;
+            baseLocalPosition = transform.localPosition;
+            baseLocalScale = transform.localScale;
+        }
+
+        var parent = transform.parent;
+        var localNormal = parent ? parent.InverseTransformDirection(worldNormal).normalized : worldNormal.normalized;
+        permanentOffset += localNormal * Mathf.Clamp(depth * 0.45f, 0.015f, 0.22f);
+        permanentOffset = Vector3.ClampMagnitude(permanentOffset, 0.55f);
+
+        var direction = new Vector3(Mathf.Abs(localNormal.x), Mathf.Abs(localNormal.y), Mathf.Abs(localNormal.z));
+        scaleCompression += direction * Mathf.Clamp(depth * 0.22f, 0.01f, 0.12f);
+        scaleCompression = Vector3.Min(scaleCompression, Vector3.one * 0.38f);
+
+        transform.localPosition = baseLocalPosition + permanentOffset;
+        transform.localScale = Vector3.Scale(baseLocalScale, Vector3.one - scaleCompression);
+    }
+}
+
 /// <summary>
 /// Lightweight node-and-spring approximation: affected mesh vertices carry velocity, spring toward a permanently
 /// deformed target, and lose oscillation through damping. This is visual and intentionally does not replace Unity's
@@ -516,7 +580,24 @@ internal sealed class BeamNgSoftBodyMesh : MonoBehaviour
         var localPoint = transform.InverseTransformPoint(worldPoint);
         var localNormal = transform.InverseTransformDirection(worldNormal).normalized;
         var localRadius = radiusWorld / averageScale;
-        if (mesh.bounds.SqrDistance(localPoint) > localRadius * localRadius) return false;
+
+        // Vehicle colliders frequently sit well outside or beside the visual mesh origin. Snap the damage center to
+        // the closest actual vertex when needed instead of silently rejecting an otherwise valid impact.
+        if (mesh.bounds.SqrDistance(localPoint) > localRadius * localRadius)
+        {
+            var nearestIndex = -1;
+            var nearestDistance = float.MaxValue;
+            for (var index = 0; index < restVertices.Length; index++)
+            {
+                var distance = (restVertices[index] + offsets[index] - localPoint).sqrMagnitude;
+                if (distance >= nearestDistance) continue;
+                nearestDistance = distance;
+                nearestIndex = index;
+            }
+
+            if (nearestIndex < 0 || nearestDistance > Mathf.Pow(localRadius * 4f, 2f)) return false;
+            localPoint = restVertices[nearestIndex] + offsets[nearestIndex];
+        }
 
         var localDepth = permanentDepthWorld / averageScale;
         var changed = false;
@@ -585,9 +666,16 @@ internal sealed class BeamNgBentWheelVisual : MonoBehaviour
     private float bendDegrees;
     private float phase;
     private Quaternion previousCorrection = Quaternion.identity;
+    private Vector3 healthyScale;
+    private bool scaleCaptured;
 
     internal void AddDamage(float degrees)
     {
+        if (!scaleCaptured)
+        {
+            scaleCaptured = true;
+            healthyScale = transform.localScale;
+        }
         bendDegrees = Mathf.Clamp(bendDegrees + degrees, 0f, 35f);
         if (Mathf.Approximately(phase, 0f)) phase = UnityEngine.Random.Range(0.1f, Mathf.PI * 2f);
     }
@@ -598,6 +686,11 @@ internal sealed class BeamNgBentWheelVisual : MonoBehaviour
         var wobble = Mathf.Sin(Time.time * 11f + phase) * bendDegrees * 0.16f;
         previousCorrection = Quaternion.Euler(bendDegrees + wobble, 0f, bendDegrees * 0.35f);
         transform.localRotation *= previousCorrection;
+        if (scaleCaptured)
+        {
+            var collapse = Mathf.Lerp(1f, 0.62f, bendDegrees / 35f);
+            transform.localScale = Vector3.Scale(healthyScale, new Vector3(1f, collapse, collapse));
+        }
     }
 
     private void OnDisable()
