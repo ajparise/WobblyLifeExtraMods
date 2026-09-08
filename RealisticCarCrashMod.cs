@@ -16,6 +16,8 @@ public sealed class RealisticCarCrashMod : BaseMod
     private static readonly Ref<bool> EnabledState = new();
     private static readonly Ref<bool> RagdollOccupants = new(true);
     private static readonly Ref<bool> IgnoreLightStreetProps = new(true);
+    private static readonly Ref<bool> BodyDeformation = new(true);
+    private static readonly Ref<bool> MechanicalDamage = new(true);
     private static readonly Ref<string> Status = new("Realistic car crashes are disabled.");
     private static readonly List<RealisticCarCrashSensor> Cleanup = new();
     private static float nextVehicleScan;
@@ -49,15 +51,27 @@ public sealed class RealisticCarCrashMod : BaseMod
         Description = "Prevents a single ordinary collision from instantly destroying the vehicle.")]
     public static Ref<float> MaximumDamage = new(75f);
 
+    [ModSetting(Order = 70, Min = 0.15f, Max = 2.5f, Label = "Dent radius")]
+    public static Ref<float> DentRadius = new(0.85f);
+
+    [ModSetting(Order = 80, Min = 0.02f, Max = 0.8f, Label = "Maximum dent depth")]
+    public static Ref<float> DentDepth = new(0.28f);
+
+    [ModSetting(Order = 90, Min = 35f, Max = 160f, Label = "Wheel damage speed (km/h)")]
+    public static Ref<float> WheelDamageSpeed = new(75f);
+
     public override Container BuildPanel(string id)
     {
         return new Container(id,
             new TextWrapped("RealisticCrashHelp",
                 "Enable this before driving. Direct impact speed determines vehicle damage and lost momentum. " +
+                "BeamNG-style impacts dent body meshes, accumulate mechanical damage, and can bend a nearby wheel. " +
                 "Off-center collisions rotate the car, while sufficiently severe crashes ragdoll its occupants. " +
                 "Native vehicle destruction is synchronized when you are offline or hosting."),
             new Checkbox("Ragdoll occupants in severe crashes", true).WithValue(RagdollOccupants),
             new Checkbox("Ignore light roadside props", true).WithValue(IgnoreLightStreetProps),
+            new Checkbox("BeamNG-style body deformation", true).WithValue(BodyDeformation),
+            new Checkbox("Cumulative mechanical damage", true).WithValue(MechanicalDamage),
             base.BuildPanel(id),
             new HStack("RealisticCrashActions",
                 ActionMenu(new Button("Enable realistic crashes", Enable), nameof(Enable)),
@@ -118,11 +132,17 @@ public sealed class RealisticCarCrashMod : BaseMod
 
     internal static bool ShouldRagdollOccupants => RagdollOccupants.Value;
     internal static bool ShouldIgnoreLightStreetProps => IgnoreLightStreetProps.Value;
+    internal static bool ShouldDeformBody => BodyDeformation.Value;
+    internal static bool ShouldApplyMechanicalDamage => MechanicalDamage.Value;
 
-    internal static void ReportCrash(float speedKmh, int damage, bool severe, string vehicleName)
+    internal static void ReportCrash(float speedKmh, int damage, bool severe, string vehicleName,
+        float chassisDamage, bool dented, bool wheelBent)
     {
         var result = severe ? "SEVERE CRASH" : "Crash";
-        Status.Value = $"{result}: {vehicleName} hit at {speedKmh:0} km/h; {damage:N0} damage applied.";
+        var deformation = dented ? "; body dented" : string.Empty;
+        var wheel = wheelBent ? "; wheel bent" : string.Empty;
+        Status.Value = $"{result}: {vehicleName} hit at {speedKmh:0} km/h; {damage:N0} damage; " +
+                       $"chassis {chassisDamage * 100f:0}%{deformation}{wheel}.";
         Plugin.Log?.LogInfo(Status.Value);
     }
 }
@@ -139,6 +159,9 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
     private Rigidbody body;
     private PlayerVehicleDestructable destructable;
     private float nextCrashTime;
+    private float chassisDamage;
+    private float steeringDamage;
+    private float wobblePhase;
 
     internal void Configure(PlayerVehicle target)
     {
@@ -146,6 +169,7 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         var movement = vehicle.GetVehicleMovementBase();
         body = movement ? movement.GetRigidbody() : vehicle.GetComponent<Rigidbody>();
         destructable = vehicle.GetComponent<PlayerVehicleDestructable>();
+        wobblePhase = UnityEngine.Random.Range(0f, Mathf.PI * 2f);
     }
 
     private void OnCollisionEnter(Collision collision)
@@ -172,9 +196,19 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         var severeThreshold = Mathf.Max(minimum + 5f,
             Mathf.Clamp(RealisticCarCrashMod.SevereCrashSpeed.Value, 30f, 160f));
         var severity = Mathf.Clamp01((speedKmh - minimum) / Mathf.Max(20f, severeThreshold - minimum));
+        var deformationSeverity = Mathf.Clamp01(Mathf.InverseLerp(minimum, 150f, speedKmh));
         var severe = speedKmh >= severeThreshold;
 
         ApplyCrashPhysics(contact, severity);
+        if (RealisticCarCrashMod.ShouldApplyMechanicalDamage)
+        {
+            chassisDamage = Mathf.Clamp01(chassisDamage + Mathf.Lerp(0.04f, 0.38f, deformationSeverity));
+            steeringDamage = Mathf.Clamp01(steeringDamage + deformationSeverity * 0.22f);
+        }
+
+        var dented = RealisticCarCrashMod.ShouldDeformBody && DeformBody(contact, deformationSeverity);
+        var wheelBent = speedKmh >= Mathf.Clamp(RealisticCarCrashMod.WheelDamageSpeed.Value, 35f, 160f) &&
+                        BendNearestWheel(contact.point, deformationSeverity);
 
         var maximumDamage = Mathf.Clamp(Mathf.RoundToInt(RealisticCarCrashMod.MaximumDamage.Value), 5, 500);
         var damage = Mathf.Clamp(Mathf.RoundToInt(
@@ -190,7 +224,111 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
         var displayName = string.IsNullOrWhiteSpace(vehicle.name)
             ? "vehicle"
             : vehicle.name.Replace("(Clone)", string.Empty).Trim();
-        RealisticCarCrashMod.ReportCrash(speedKmh, damage, severe, displayName);
+        RealisticCarCrashMod.ReportCrash(speedKmh, damage, severe, displayName,
+            chassisDamage, dented, wheelBent);
+    }
+
+    private void FixedUpdate()
+    {
+        if (!body || !RealisticCarCrashMod.ShouldApplyMechanicalDamage || chassisDamage <= 0.01f) return;
+
+        var horizontalVelocity = Vector3.ProjectOnPlane(body.velocity, Vector3.up);
+        if (horizontalVelocity.sqrMagnitude > 0.25f)
+        {
+            // Accumulated chassis damage acts like increasing rolling resistance and lost engine efficiency.
+            body.AddForce(-horizontalVelocity * Mathf.Lerp(0.03f, 0.42f, chassisDamage),
+                ForceMode.Acceleration);
+
+            // Bent suspension produces a small speed-dependent pull instead of an uncontrollable constant spin.
+            var direction = Mathf.Sin(Time.time * 3.7f + wobblePhase);
+            var pull = direction * steeringDamage * Mathf.Min(horizontalVelocity.magnitude, 18f) * 0.12f;
+            body.AddTorque(Vector3.up * pull, ForceMode.Acceleration);
+        }
+    }
+
+    private bool DeformBody(ContactPoint contact, float severity)
+    {
+        if (severity <= 0.01f) return false;
+
+        var radiusWorld = Mathf.Clamp(RealisticCarCrashMod.DentRadius.Value, 0.15f, 2.5f);
+        var depthWorld = Mathf.Clamp(RealisticCarCrashMod.DentDepth.Value, 0.02f, 0.8f) * severity;
+        var deformedAny = false;
+        var meshCount = 0;
+
+        foreach (var filter in vehicle.GetComponentsInChildren<MeshFilter>(true))
+        {
+            if (!filter || !filter.sharedMesh || IsWheelOrUtilityPart(filter.transform)) continue;
+            if (meshCount >= 5) break;
+
+            try
+            {
+                var mesh = filter.mesh;
+                if (!mesh || mesh.vertexCount == 0 || mesh.vertexCount > 80000) continue;
+
+                var localPoint = filter.transform.InverseTransformPoint(contact.point);
+                var scale = filter.transform.lossyScale;
+                var averageScale = Mathf.Max(0.01f, (Mathf.Abs(scale.x) + Mathf.Abs(scale.y) + Mathf.Abs(scale.z)) / 3f);
+                var localRadius = radiusWorld / averageScale;
+                if (mesh.bounds.SqrDistance(localPoint) > localRadius * localRadius) continue;
+
+                var localNormal = filter.transform.InverseTransformDirection(contact.normal).normalized;
+                var localDepth = depthWorld / averageScale;
+                var vertices = mesh.vertices;
+                var changed = false;
+                for (var index = 0; index < vertices.Length; index++)
+                {
+                    var distance = Vector3.Distance(vertices[index], localPoint);
+                    if (distance >= localRadius) continue;
+                    var falloff = 1f - distance / localRadius;
+                    falloff *= falloff;
+                    vertices[index] += localNormal * (localDepth * falloff);
+                    changed = true;
+                }
+
+                if (!changed) continue;
+                mesh.vertices = vertices;
+                mesh.RecalculateBounds();
+                mesh.RecalculateNormals();
+                deformedAny = true;
+                meshCount++;
+            }
+            catch (Exception)
+            {
+                // Some game meshes are intentionally not readable. Native damage still applies to those vehicles.
+            }
+        }
+
+        return deformedAny;
+    }
+
+    private bool BendNearestWheel(Vector3 impactPoint, float severity)
+    {
+        var wheel = vehicle.GetComponentsInChildren<Renderer>(true)
+            .Select(renderer => renderer ? renderer.transform : null)
+            .Where(candidate => candidate && IsWheelPart(candidate))
+            .OrderBy(candidate => (candidate.position - impactPoint).sqrMagnitude)
+            .FirstOrDefault();
+        if (!wheel) return false;
+
+        var bentWheel = wheel.GetComponent<BeamNgBentWheelVisual>() ??
+                        wheel.gameObject.AddComponent<BeamNgBentWheelVisual>();
+        bentWheel.AddDamage(Mathf.Lerp(5f, 24f, Mathf.Clamp01(severity)));
+        steeringDamage = Mathf.Clamp01(steeringDamage + Mathf.Lerp(0.15f, 0.45f, severity));
+        return true;
+    }
+
+    private static bool IsWheelOrUtilityPart(Transform candidate)
+    {
+        var normalized = NormalizeName(candidate.name);
+        return IsWheelPart(candidate) || normalized.Contains("collider") || normalized.Contains("shadow") ||
+               normalized.Contains("seat") || normalized.Contains("steering");
+    }
+
+    private static bool IsWheelPart(Transform candidate)
+    {
+        var normalized = NormalizeName(candidate.name);
+        return normalized.Contains("wheel") || normalized.Contains("tire") || normalized.Contains("tyre") ||
+               normalized.Contains("rim");
     }
 
     private bool IsLightRoadsideObstacle(Collider otherCollider)
@@ -265,5 +403,33 @@ internal sealed class RealisticCarCrashSensor : MonoBehaviour
             var throwDirection = (-impactVelocity.normalized + Vector3.up * 0.35f).normalized;
             playerBody.SetRagdollVelocity(throwDirection * Mathf.Lerp(4f, 12f, severity));
         }
+    }
+}
+
+/// <summary>Applies a non-accumulating visual alignment correction after the vehicle animates its wheel.</summary>
+internal sealed class BeamNgBentWheelVisual : MonoBehaviour
+{
+    private float bendDegrees;
+    private float phase;
+    private Quaternion previousCorrection = Quaternion.identity;
+
+    internal void AddDamage(float degrees)
+    {
+        bendDegrees = Mathf.Clamp(bendDegrees + degrees, 0f, 35f);
+        if (Mathf.Approximately(phase, 0f)) phase = UnityEngine.Random.Range(0.1f, Mathf.PI * 2f);
+    }
+
+    private void LateUpdate()
+    {
+        transform.localRotation *= Quaternion.Inverse(previousCorrection);
+        var wobble = Mathf.Sin(Time.time * 11f + phase) * bendDegrees * 0.16f;
+        previousCorrection = Quaternion.Euler(bendDegrees + wobble, 0f, bendDegrees * 0.35f);
+        transform.localRotation *= previousCorrection;
+    }
+
+    private void OnDisable()
+    {
+        transform.localRotation *= Quaternion.Inverse(previousCorrection);
+        previousCorrection = Quaternion.identity;
     }
 }
