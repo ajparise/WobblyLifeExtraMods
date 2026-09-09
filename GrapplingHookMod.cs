@@ -76,6 +76,7 @@ public sealed class GrapplingHookMod : BaseMod
         MinecraftBuildingMod.Unequip();
         HeavyAutomaticGunMod.Unequip();
         ShrinkRayMod.Unequip();
+        LavaGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Grappling hook equipped. Left-click to attach; right-click to release.";
     }

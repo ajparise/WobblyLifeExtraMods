@@ -92,6 +92,7 @@ public sealed class RocketLauncherMod : BaseMod
         HeavyAutomaticGunMod.Unequip();
         GrapplingHookMod.Unequip();
         ShrinkRayMod.Unequip();
+        LavaGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Rocket prop launcher equipped. Close F2, aim, and hold left-click.";
     }

@@ -104,6 +104,7 @@ public sealed class HeavyAutomaticGunMod : BaseMod
         MinecraftBuildingMod.Unequip();
         GrapplingHookMod.Unequip();
         ShrinkRayMod.Unequip();
+        LavaGunMod.Unequip();
         EquippedState.Value = true;
         rounds = MagazineCapacity;
         reloading = false;

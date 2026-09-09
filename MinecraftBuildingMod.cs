@@ -122,6 +122,7 @@ public sealed class MinecraftBuildingMod : BaseMod
         HeavyAutomaticGunMod.Unequip();
         GrapplingHookMod.Unequip();
         ShrinkRayMod.Unequip();
+        LavaGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Building mode equipped. Left place, right mine, middle pick block.";
     }

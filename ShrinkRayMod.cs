@@ -78,6 +78,7 @@ public sealed class ShrinkRayMod : BaseMod
         MinecraftBuildingMod.Unequip();
         HeavyAutomaticGunMod.Unequip();
         GrapplingHookMod.Unequip();
+        LavaGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = $"Shrink ray equipped in {ModeName()} mode. Press Q to toggle; right-click restores.";
     }

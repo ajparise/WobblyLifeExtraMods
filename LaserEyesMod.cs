@@ -74,6 +74,7 @@ public sealed class LaserEyesMod : BaseMod
         HeavyAutomaticGunMod.Unequip();
         GrapplingHookMod.Unequip();
         ShrinkRayMod.Unequip();
+        LavaGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Laser eyes equipped. Close F2, aim, and press Q to explode the target.";
     }

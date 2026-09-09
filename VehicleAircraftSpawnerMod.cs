@@ -174,6 +174,7 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
         HeavyAutomaticGunMod.Unequip();
         GrapplingHookMod.Unequip();
         ShrinkRayMod.Unequip();
+        LavaGunMod.Unequip();
         gunMode = mode;
         EquippedState.Value = true;
         Status.Value = $"{label} gun equipped. Close F2, aim, and hold left-click.";

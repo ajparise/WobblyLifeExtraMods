@@ -98,6 +98,7 @@ public sealed class PropSpawnerGunMod : BaseMod
         HeavyAutomaticGunMod.Unequip();
         GrapplingHookMod.Unequip();
         ShrinkRayMod.Unequip();
+        LavaGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Prop spawner gun equipped. Close the menu, aim, and left-click.";
     }
