@@ -31,9 +31,11 @@ public sealed class CamouflagePropHuntMod : BaseMod
     private static PlayerCharacter disguisedCharacter;
     private static Rigidbody disguisedBody;
     private static CamouflageFreezeAnchor freezeAnchor;
+    private static PlayerControllerInputManager lockedInputManager;
+    private static readonly object MovementLockHandle = new();
+    private static bool networkBodyHidden;
     private static Vector3 visualPositionOffset;
     private static Quaternion visualRotationOffset = Quaternion.identity;
-    private static bool frozen;
     private static bool loadPending;
 
     public override string Name => "Camouflage / Prop Hunt";
@@ -72,8 +74,9 @@ public sealed class CamouflagePropHuntMod : BaseMod
         return new Container(id,
             new TextWrapped("CamouflageHelp",
                 "Equip and close F2. Aim at an object and press Q to copy its appearance, temporarily replace/hide it, " +
-                "and teleport into its position. Press H to freeze or unfreeze while hiding. Press R to remove the disguise " +
-                "and restore the replaced object. You can also search below and apply a prefab disguise without teleporting."),
+                "and teleport into its position. Movement is completely locked while disguised so you stay hidden. " +
+                "Press R to remove the disguise, restore movement, and restore the replaced object. " +
+                "You can also search below and apply a prefab disguise without teleporting."),
             new SearchableCombo("Search disguise", Array.Empty<string>())
                 .WithItems(SearchItems)
                 .WithSelectedIndex(SearchIndex),
@@ -84,7 +87,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
                 ActionMenu(new Button("Remove disguise", RemoveDisguise), nameof(RemoveDisguise))
             ).WithContentWidth(),
             new HStack("CamouflageUtilityActions",
-                ActionMenu(new Button("Toggle hiding freeze", ToggleFreeze), nameof(ToggleFreeze)),
+                ActionMenu(new Button("Lock hiding position", ToggleFreeze), nameof(ToggleFreeze)),
                 ActionMenu(new Button("Unequip and restore", Unequip), nameof(Unequip)),
                 ActionMenu(new Button("Refresh search list", RefreshSearch), nameof(RefreshSearch))
             ).WithContentWidth(),
@@ -105,7 +108,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
         ShrinkRayMod.Unequip();
         LaserEyesMod.Unequip();
         EquippedState.Value = true;
-        Status.Value = "Camouflage equipped. Aim and press Q, H to freeze, R to restore.";
+        Status.Value = "Camouflage equipped. Aim and press Q; movement locks until you press R to restore.";
     }
 
     [ModAction(ShowInUI = false)]
@@ -133,11 +136,9 @@ public sealed class CamouflagePropHuntMod : BaseMod
             Status.Value = "Choose a disguise before using hiding freeze.";
             return;
         }
-        frozen = !frozen;
         if (!freezeAnchor) freezeAnchor = disguisedBody.gameObject.AddComponent<CamouflageFreezeAnchor>();
-        freezeAnchor.SetFrozen(frozen);
-        Status.Value = frozen ? "Frozen in place and hiding as the prop. Press H to move again."
-            : "Unfrozen. Your disguise now follows you again.";
+        freezeAnchor.SetFrozen(true);
+        Status.Value = "Movement is locked while hiding. Press R to restore your Wobbly and move again.";
     }
 
     [ModAction(ShowInUI = false)]
@@ -194,7 +195,6 @@ public sealed class CamouflagePropHuntMod : BaseMod
         UpdateVisualFollow();
         if (Cursor.visible) return;
         if (Input.GetKeyDown(KeyCode.Q)) CopyAimedObject(character);
-        if (Input.GetKeyDown(KeyCode.H)) ToggleFreeze();
         if (Input.GetKeyDown(KeyCode.R)) RemoveDisguise();
     }
 
@@ -315,9 +315,12 @@ public sealed class CamouflagePropHuntMod : BaseMod
 
         visualPositionOffset = Quaternion.Inverse(body.rotation) * (activeVisual.transform.position - body.position);
         visualRotationOffset = Quaternion.Inverse(body.rotation) * activeVisual.transform.rotation;
+        freezeAnchor.SetFrozen(true);
+        lockedInputManager = character.GetPlayerController()?.GetPlayerControllerInputManager();
+        lockedInputManager?.DisablePlayerTransformInput(MovementLockHandle);
         Status.Value = teleport
-            ? $"Replaced {label} and teleported into its camouflage. H freezes; R restores it."
-            : $"Camouflaged as searched prefab {label}. H freezes; R restores your Wobbly.";
+            ? $"Replaced {label} and teleported into its camouflage. You cannot move until R restores it."
+            : $"Camouflaged as searched prefab {label}. You cannot move until R restores your Wobbly.";
     }
 
     private static GameObject BuildVisualCopy(GameObject source, Bounds sourceBounds)
@@ -389,6 +392,16 @@ public sealed class CamouflagePropHuntMod : BaseMod
     private static void SaveAndHidePlayer(PlayerCharacter character)
     {
         PlayerRenderers.Clear();
+        networkBodyHidden = false;
+        if (lstwoMODS_WobblyLife.PropSpawner.PropSpawnManager.IsServer)
+        {
+            // ServerSetVisible sends a buffered hide to every other client. Reactivating locally immediately
+            // keeps this client's camera and the R restore input alive without exposing the Wobbly remotely.
+            VanishComponent.SetVisible(character.gameObject, false);
+            VanishComponent.SetVisibleLocal(character.gameObject, true);
+            networkBodyHidden = true;
+        }
+        character.SetCharacterNameVisible(false);
         foreach (var renderer in character.GetComponentsInChildren<Renderer>(true))
         {
             if (!renderer || renderer.transform.IsChildOf(activeVisual.transform)) continue;
@@ -425,10 +438,21 @@ public sealed class CamouflagePropHuntMod : BaseMod
 
     private static void ClearDisguise()
     {
+        lockedInputManager?.EnablePlayerTransformInput(MovementLockHandle);
+        lockedInputManager = null;
         if (freezeAnchor) freezeAnchor.SetFrozen(false);
         if (freezeAnchor) UnityEngine.Object.Destroy(freezeAnchor);
         freezeAnchor = null;
-        frozen = false;
+        if (disguisedCharacter)
+        {
+            if (networkBodyHidden)
+            {
+                VanishComponent.SetVisible(disguisedCharacter.gameObject, true);
+                VanishComponent.SetVisibleLocal(disguisedCharacter.gameObject, true);
+            }
+            disguisedCharacter.SetCharacterNameVisible(true);
+        }
+        networkBodyHidden = false;
         foreach (var saved in PlayerRenderers) if (saved.Key) saved.Key.enabled = saved.Value;
         foreach (var saved in HiddenTargetRenderers) if (saved.Key) saved.Key.enabled = saved.Value;
         foreach (var saved in HiddenTargetColliders) if (saved.Key) saved.Key.enabled = saved.Value;
@@ -520,7 +544,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
         GUI.DrawTexture(new Rect(x - 1f, y + 5f, 2f, 10f), Texture2D.whiteTexture);
         GUI.DrawTexture(new Rect(x - 3f, y - 3f, 6f, 6f), Texture2D.whiteTexture);
         GUI.Box(new Rect(Screen.width * 0.5f - 145f, Screen.height - 86f, 290f, 30f),
-            activeVisual ? (frozen ? "CAMOUFLAGE: HIDING [H]   RESTORE [R]" : "CAMOUFLAGE ACTIVE   HIDE [H]   RESTORE [R]")
+            activeVisual ? "CAMOUFLAGE: MOVEMENT LOCKED   RESTORE [R]"
                 : "COPY / REPLACE TARGET [Q]");
         GUI.color = previous;
     }
