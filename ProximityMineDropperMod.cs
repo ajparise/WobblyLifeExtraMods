@@ -131,7 +131,8 @@ public sealed class ProximityMineDropperMod : BaseMod
 
         RestoreSavedClothingIfNeeded(controller, character);
         CleanupMineSet();
-        if (Cursor.visible || LaserEyesMod.IsEquipped || !Input.GetKeyDown(KeyCode.Q)) return;
+        if (Cursor.visible || LaserEyesMod.IsEquipped || CamouflagePropHuntMod.IsEquipped ||
+            !Input.GetKeyDown(KeyCode.Q)) return;
 
         if (!PropSpawnManager.IsServer)
         {
