@@ -78,6 +78,7 @@ public sealed class WindCannonMod : BaseMod
         GrapplingHookMod.Unequip();
         ShrinkRayMod.Unequip();
         LavaGunMod.Unequip();
+        ChaosWandMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Wind cannon equipped. Close the menu, aim, and left-click to fire.";
     }

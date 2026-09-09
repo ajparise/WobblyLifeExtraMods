@@ -108,6 +108,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
         ShrinkRayMod.Unequip();
         LaserEyesMod.Unequip();
         LavaGunMod.Unequip();
+        ChaosWandMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Camouflage equipped. Aim and press Q; movement locks until you press R to restore.";
     }

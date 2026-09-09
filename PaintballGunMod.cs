@@ -106,6 +106,7 @@ public sealed class PaintballGunMod : BaseMod
         GrapplingHookMod.Unequip();
         ShrinkRayMod.Unequip();
         LavaGunMod.Unequip();
+        ChaosWandMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Paintball gun equipped. Close F2, aim, and left-click.";
     }

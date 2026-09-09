@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.12.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.13.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -24,6 +24,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Custom Cars: Lambo:** spawns a functional native road chassis with a generated low-poly wedge supercar body, custom paint, lights, aero details, high-performance acceleration, and a loud RPM-driven sports-car engine sound.
 - **Camouflage / Prop Hunt:** copy and replace an aimed world object or use a searchable prefab disguise, teleport into its place, freeze while hiding, and safely restore everything afterward.
 - **Lava Gun:** fires molten projectiles that ignite hit surfaces, instantly respawn Wobblies, and immediately destroy vehicles without leaving rusty wrecks.
+- **Chaos Wand:** a color-changing random-effect weapon that launches, tornado-spins, floats, or confetti-blasts Wobblies, vehicles, and physics props.
 
 ## Requirements
 
@@ -84,6 +85,8 @@ For camouflage, open **Extra Mods → Camouflage / Prop Hunt** and choose **Equi
 
 For the lava gun, open **Extra Mods → Lava Gun** and choose **Equip lava gun**. Close F2, aim with the orange crosshair, and left-click to launch a glowing lava ball. Enable **Rapid fire** to hold the trigger. A hit Wobbly is destroyed through the native server path and, when **Instant player respawn** is enabled, receives a respawn request on the next frame. Hit vehicles receive a custom blast and are directly removed instead of entering the game's damaged-car replacement flow, so no rusty wreck remains. Other hit surfaces receive a configurable animated fire effect. Destructive effects require an offline game or the lobby host.
 
+For a random surprise, open **Extra Mods → Chaos Wand** and choose **Equip Chaos Wand**. Close F2, aim with the color-changing crosshair, and left-click. Every successful zap independently rolls one of four effects: super launch, tornado spin, temporary zero gravity, or a large confetti blast. It works on Wobblies, driven or empty vehicles, and other movable physics props; static scenery still receives the visual magic. Range, strength, float duration, cooldown, and rapid chaos are adjustable. Physics effects require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -98,4 +101,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.12.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.13.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
