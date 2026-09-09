@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.11.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.11.1 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -79,7 +79,7 @@ For laser eyes, open **Extra Mods → Laser Eyes**, choose **Equip laser eyes**,
 
 For the custom Lambo, open **Extra Mods → Custom Cars: Lambo** after entering a save, adjust its RGB body color and performance, then choose **Spawn custom Lambo**. The mod selects the best available sports/race road chassis in the installed game build and falls back to another networked road car when necessary. It retains the native seats, entry controls, moving wheels, collision, damage, and network lifecycle while replacing stock non-wheel renderers with a fitted angular wedge body, glass cabin, splitter, intakes, diffuser, lights, and rear wing. Hold **W** while driving for the added acceleration. The spatial engine audio uses a louder volume and an RPM-style curve that moves from a deep idle to a high sports-car pitch under speed and throttle; both volume and maximum pitch are adjustable. The generated body is a stylized Lambo-inspired model rather than a licensed manufacturer asset, and its custom shell is local to the host. Spawning requires an offline game or the lobby host.
 
-For camouflage, open **Extra Mods → Camouflage / Prop Hunt** and choose **Equip camouflage**. Close F2, aim at a car, prop, Wobbly, or reasonably sized scenery piece, and press **Q**. Your Wobbly copies its rendered appearance, hides the original locally, and teleports into its position. Press **H** to freeze/unfreeze while hiding and **R** to restore your Wobbly plus the replaced object. Alternatively, type in the searchable disguise list and choose **Use searched disguise** to wear that prefab without teleporting or replacing a world object. Only visual meshes are copied—scripts, networking components, and colliders are never duplicated—and map-sized roots are rejected to prevent deleting or cloning the whole world. Camouflage takes priority over the mine dropper's Q input while equipped and is local/session-only.
+For camouflage, open **Extra Mods → Camouflage / Prop Hunt** and choose **Equip camouflage**. Close F2, aim at a car, prop, Wobbly, or reasonably sized scenery piece, and press **Q**. Your Wobbly copies its rendered appearance, hides the original locally, and teleports into its position; large targets place the player safely outside the hit surface so forward/back movement is not trapped inside geometry. Press **H** to freeze/unfreeze while hiding and **R** to restore your Wobbly plus the replaced object. Hiding uses a dedicated position anchor and never changes the Wobbly rigidbody constraints, so all movement directions work normally after unfreezing. Alternatively, type in the searchable disguise list and choose **Use searched disguise** to wear that prefab without teleporting or replacing a world object. Only visual meshes are copied—scripts, networking components, and colliders are never duplicated—and map-sized roots are rejected to prevent deleting or cloning the whole world. Camouflage takes priority over the mine dropper's Q input while equipped and is local/session-only.
 
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
@@ -95,4 +95,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.11.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.11.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

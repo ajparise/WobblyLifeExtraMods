@@ -30,7 +30,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
     private static GameObject addressableSource;
     private static PlayerCharacter disguisedCharacter;
     private static Rigidbody disguisedBody;
-    private static RigidbodyConstraints savedConstraints;
+    private static CamouflageFreezeAnchor freezeAnchor;
     private static Vector3 visualPositionOffset;
     private static Quaternion visualRotationOffset = Quaternion.identity;
     private static bool frozen;
@@ -134,12 +134,8 @@ public sealed class CamouflagePropHuntMod : BaseMod
             return;
         }
         frozen = !frozen;
-        disguisedBody.constraints = frozen ? RigidbodyConstraints.FreezeAll : savedConstraints;
-        if (frozen)
-        {
-            disguisedBody.velocity = Vector3.zero;
-            disguisedBody.angularVelocity = Vector3.zero;
-        }
+        if (!freezeAnchor) freezeAnchor = disguisedBody.gameObject.AddComponent<CamouflageFreezeAnchor>();
+        freezeAnchor.SetFrozen(frozen);
         Status.Value = frozen ? "Frozen in place and hiding as the prop. Press H to move again."
             : "Unfrozen. Your disguise now follows you again.";
     }
@@ -232,7 +228,11 @@ public sealed class CamouflagePropHuntMod : BaseMod
                 return;
             }
 
-            BeginDisguise(character, target, true, bounds, FriendlyObjectName(target));
+            var largestDimension = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
+            var destination = largestDimension > 3.5f
+                ? hit.point + hit.normal.normalized * 0.9f + Vector3.up * 0.1f
+                : target.transform.position;
+            BeginDisguise(character, target, true, bounds, FriendlyObjectName(target), true, destination);
             return;
         }
         Status.Value = "No copyable object was found under the crosshair.";
@@ -273,7 +273,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
     }
 
     private static void BeginDisguise(PlayerCharacter character, GameObject source, bool teleport,
-        Bounds sourceBounds, string label, bool clearFirst = true)
+        Bounds sourceBounds, string label, bool clearFirst = true, Vector3? teleportDestination = null)
     {
         if (clearFirst) ClearDisguise();
         var bodyComponent = character.GetComponentInChildren<PlayerBody>(true);
@@ -293,17 +293,18 @@ public sealed class CamouflagePropHuntMod : BaseMod
 
         disguisedCharacter = character;
         disguisedBody = body;
-        savedConstraints = body.constraints;
         activeVisual = visual;
         activeTarget = teleport ? source : null;
+        freezeAnchor = body.gameObject.AddComponent<CamouflageFreezeAnchor>();
         SaveAndHidePlayer(character);
 
         if (teleport)
         {
             SaveAndHideTarget(source);
             character.GetPlayerController()?.GetPlayerControllerInteractor()?.ForceRequestExit();
-            character.SetPlayerPosition(source.transform.position);
-            activeVisual.transform.position = source.transform.position;
+            var destination = teleportDestination ?? source.transform.position;
+            character.SetPlayerPosition(destination);
+            activeVisual.transform.position = destination;
             activeVisual.transform.rotation = source.transform.rotation;
         }
         else
@@ -424,15 +425,9 @@ public sealed class CamouflagePropHuntMod : BaseMod
 
     private static void ClearDisguise()
     {
-        if (disguisedBody)
-        {
-            disguisedBody.constraints = savedConstraints;
-            if (frozen)
-            {
-                disguisedBody.velocity = Vector3.zero;
-                disguisedBody.angularVelocity = Vector3.zero;
-            }
-        }
+        if (freezeAnchor) freezeAnchor.SetFrozen(false);
+        if (freezeAnchor) UnityEngine.Object.Destroy(freezeAnchor);
+        freezeAnchor = null;
         frozen = false;
         foreach (var saved in PlayerRenderers) if (saved.Key) saved.Key.enabled = saved.Value;
         foreach (var saved in HiddenTargetRenderers) if (saved.Key) saved.Key.enabled = saved.Value;
@@ -528,5 +523,34 @@ public sealed class CamouflagePropHuntMod : BaseMod
             activeVisual ? (frozen ? "CAMOUFLAGE: HIDING [H]   RESTORE [R]" : "CAMOUFLAGE ACTIVE   HIDE [H]   RESTORE [R]")
                 : "COPY / REPLACE TARGET [Q]");
         GUI.color = previous;
+    }
+}
+
+/// <summary>Locks a hiding player without changing the constraint flags used by Wobbly movement.</summary>
+internal sealed class CamouflageFreezeAnchor : MonoBehaviour
+{
+    private Rigidbody body;
+    private bool frozen;
+    private Vector3 position;
+    private Quaternion rotation;
+
+    internal void SetFrozen(bool value)
+    {
+        if (!body) body = GetComponent<Rigidbody>();
+        frozen = value && body;
+        if (!frozen) return;
+        position = body.position;
+        rotation = body.rotation;
+        body.velocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+    }
+
+    private void FixedUpdate()
+    {
+        if (!frozen || !body) return;
+        body.velocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+        body.position = position;
+        body.rotation = rotation;
     }
 }
