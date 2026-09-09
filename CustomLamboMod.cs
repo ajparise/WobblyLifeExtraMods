@@ -49,6 +49,12 @@ public sealed class CustomLamboMod : BaseMod
     [ModSetting(Order = 70, Min = 0f, Max = 30f, Label = "High-speed downforce")]
     public static Ref<float> Downforce = new(8f);
 
+    [ModSetting(Order = 80, Min = 0.5f, Max = 4f, Label = "Sport engine volume")]
+    public static Ref<float> EngineVolume = new(2.4f);
+
+    [ModSetting(Order = 90, Min = 1f, Max = 2f, Label = "Maximum engine pitch")]
+    public static Ref<float> MaximumEnginePitch = new(1.55f);
+
     protected override void OnStaticInit()
     {
         AssetDatabase.OnReady += ResolveChassis;
@@ -62,7 +68,8 @@ public sealed class CustomLamboMod : BaseMod
                 "Choose a body color and spawn the Lambo after entering a save. It uses a genuine networked road-car " +
                 "chassis for driving, seats, wheels, collisions, damage, and multiplayer synchronization. The mod replaces " +
                 "the stock body locally with a low wedge shell, glass cabin, sharp lights, intakes, diffuser, and rear wing. " +
-                "W adds the configured supercar acceleration. Host/offline spawning is required."),
+                "W adds the configured supercar acceleration. Its louder sports-car engine has a deep idle and rises " +
+                "through a high-RPM pitch curve with speed and throttle. Host/offline spawning is required."),
             base.BuildPanel(id),
             new HStack("CustomLamboActions",
                 ActionMenu(new Button("Spawn custom Lambo", SpawnLambo), nameof(SpawnLambo)),
@@ -407,20 +414,23 @@ internal sealed class CustomLamboPerformance : MonoBehaviour
 {
     private PlayerVehicle vehicle;
     private Rigidbody body;
+    private PlayerVehicleRoadSound roadSound;
 
     internal void Configure(PlayerVehicle target)
     {
         vehicle = target;
         body = target.GetComponent<Rigidbody>() ?? target.GetComponentInChildren<Rigidbody>();
+        roadSound = target.GetComponentInChildren<PlayerVehicleRoadSound>(true);
     }
 
     private void FixedUpdate()
     {
         if (!vehicle || !body) return;
         var driver = vehicle.GetDriverPlayerController();
+        var forwardSpeed = Vector3.Dot(body.velocity, vehicle.transform.forward);
+        UpdateSportsCarSound(driver, forwardSpeed);
         if (!driver || !driver.IsLocal()) return;
 
-        var forwardSpeed = Vector3.Dot(body.velocity, vehicle.transform.forward);
         if (Input.GetKey(KeyCode.W) && forwardSpeed < CustomLamboMod.MaximumSpeed.Value)
             body.AddForce(vehicle.transform.forward * Mathf.Max(5f, CustomLamboMod.Acceleration.Value),
                 ForceMode.Acceleration);
@@ -432,6 +442,25 @@ internal sealed class CustomLamboPerformance : MonoBehaviour
 
         if (flatVelocity.sqrMagnitude > 100f)
             body.AddForce(-vehicle.transform.up * Mathf.Max(0f, CustomLamboMod.Downforce.Value), ForceMode.Acceleration);
+    }
+
+    private void UpdateSportsCarSound(PlayerController driver, float forwardSpeed)
+    {
+        if (!roadSound || !driver) return;
+        var engine = roadSound.GetEngineInstance();
+        if (!engine.isValid()) return;
+
+        var maxSpeed = Mathf.Max(30f, CustomLamboMod.MaximumSpeed.Value);
+        var rpm = Mathf.Clamp01(Mathf.Abs(forwardSpeed) / maxSpeed);
+        var throttle = Input.GetKey(KeyCode.W) ? 1f : 0f;
+        var audibleMph = Mathf.Lerp(18f, 210f, Mathf.Pow(rpm, 0.72f));
+        roadSound.SetCurrentSpeedMPH(audibleMph, throttle > 0.1f);
+
+        var pitch = Mathf.Lerp(0.82f, Mathf.Clamp(CustomLamboMod.MaximumEnginePitch.Value, 1f, 2f),
+            Mathf.Pow(rpm, 0.68f));
+        pitch += throttle * Mathf.Lerp(0.06f, 0.14f, rpm);
+        engine.setPitch(pitch);
+        engine.setVolume(Mathf.Clamp(CustomLamboMod.EngineVolume.Value, 0.5f, 4f));
     }
 }
 
