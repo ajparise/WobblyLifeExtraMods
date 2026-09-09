@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.13.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.14.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -25,6 +25,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Camouflage / Prop Hunt:** copy and replace an aimed world object or use a searchable prefab disguise, teleport into its place, freeze while hiding, and safely restore everything afterward.
 - **Lava Gun:** fires molten projectiles that ignite hit surfaces, instantly respawn Wobblies, and immediately destroy vehicles without leaving rusty wrecks.
 - **Chaos Wand:** a color-changing random-effect weapon that launches, tornado-spins, floats, or confetti-blasts Wobblies, vehicles, and physics props.
+- **Portal Gun:** places linked blue and orange surface portals that teleport Wobblies, vehicles, and physics props while redirecting their momentum.
 
 ## Requirements
 
@@ -87,6 +88,8 @@ For the lava gun, open **Extra Mods → Lava Gun** and choose **Equip lava gun**
 
 For a random surprise, open **Extra Mods → Chaos Wand** and choose **Equip Chaos Wand**. Close F2, aim with the color-changing crosshair, and left-click. Every successful zap independently rolls one of four effects: super launch, tornado spin, temporary zero gravity, or a large confetti blast. It works on Wobblies, driven or empty vehicles, and other movable physics props; static scenery still receives the visual magic. Range, strength, float duration, cooldown, and rapid chaos are adjustable. Physics effects require an offline game or the lobby host.
 
+For portals, open **Extra Mods → Portal Gun** and choose **Equip Portal Gun**. Close F2, then left-click a solid surface to place the blue portal and right-click another surface to place the orange portal. Once both exist, Wobblies, occupied or empty vehicles, and movable physics props can travel in either direction. Linear and angular momentum are rotated to match the exit portal, with an adjustable outward boost and retrigger delay preventing immediate loops. Portal width and height can be enlarged for vehicles. Press **R** or use **Clear portals** to remove the pair. Placed portals remain active if the gun is unequipped, but are automatically cleared when leaving the world. Portal placement and physics require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -101,4 +104,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.13.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.14.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

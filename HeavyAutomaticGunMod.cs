@@ -106,6 +106,7 @@ public sealed class HeavyAutomaticGunMod : BaseMod
         ShrinkRayMod.Unequip();
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
+        PortalGunMod.Unequip();
         EquippedState.Value = true;
         rounds = MagazineCapacity;
         reloading = false;
