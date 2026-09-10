@@ -50,6 +50,10 @@ public sealed class WobblyHeadHomingGunMod : BaseMod
     [ModSetting(Order = 50, Min = 0f, Max = 1f, Label = "Movement prediction")]
     public static Ref<float> Prediction = new(0.65f);
 
+    [ModSetting(Order = 55, Min = 2f, Max = 40f, Label = "Maximum prop size",
+        Description = "Oversized physics mechanisms and world geometry are never selected by homing.")]
+    public static Ref<float> MaximumPropSize = new(14f);
+
     [ModSetting(Order = 60, Min = 2f, Max = 45f, Label = "Impact force")]
     public static Ref<float> ImpactForce = new(17f);
 
@@ -195,7 +199,7 @@ public sealed class WobblyHeadHomingGunMod : BaseMod
             : character
                 ? character.GetComponentInChildren<PlayerBody>(true)?.GetRigidbody() ?? collider.attachedRigidbody
                 : collider.attachedRigidbody;
-        if (!vehicle && !character && (!body || body.isKinematic)) return null;
+        if (!vehicle && !character && (!body || body.isKinematic || !IsValidMovableProp(body))) return null;
         var key = vehicle ? vehicle.gameObject : character ? character.gameObject : body.gameObject;
         return new HomingTarget
         {
@@ -204,6 +208,55 @@ public sealed class WobblyHeadHomingGunMod : BaseMod
             AimTransform = body ? body.transform : key.transform,
             Name = key.name
         };
+    }
+
+    private static bool IsValidMovableProp(Rigidbody body)
+    {
+        if (!body || body.isKinematic || IsWorldGeometryHierarchy(body.transform)) return false;
+        var bounds = CalculateTargetBounds(body.gameObject);
+        var largestDimension = Mathf.Max(bounds.size.x, Mathf.Max(bounds.size.y, bounds.size.z));
+        return largestDimension <= Mathf.Max(2f, MaximumPropSize.Value);
+    }
+
+    private static bool IsWorldGeometryHierarchy(Transform transform)
+    {
+        for (var current = transform; current; current = current.parent)
+        {
+            var value = current.name.ToLowerInvariant();
+            if (value.Contains("building") || value.Contains("house") || value.Contains("terrain") ||
+                value.Contains("mountain") || value.Contains("road") || value.Contains("bridge") ||
+                value.Contains("island") || value.Contains("world") || value.Contains("level geometry"))
+                return true;
+        }
+        return false;
+    }
+
+    private static Bounds CalculateTargetBounds(GameObject target)
+    {
+        var found = false;
+        var bounds = new Bounds(target.transform.position, Vector3.zero);
+        foreach (var collider in target.GetComponentsInChildren<Collider>(true))
+        {
+            if (!collider || collider.isTrigger) continue;
+            if (!found)
+            {
+                bounds = collider.bounds;
+                found = true;
+            }
+            else bounds.Encapsulate(collider.bounds);
+        }
+        if (found) return bounds;
+        foreach (var renderer in target.GetComponentsInChildren<Renderer>(true))
+        {
+            if (!renderer) continue;
+            if (!found)
+            {
+                bounds = renderer.bounds;
+                found = true;
+            }
+            else bounds.Encapsulate(renderer.bounds);
+        }
+        return bounds;
     }
 
     private static bool IsBlocked(Vector3 origin, HomingTarget target, PlayerCharacter shooter)
