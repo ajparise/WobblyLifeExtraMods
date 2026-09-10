@@ -125,6 +125,7 @@ public sealed class MinecraftBuildingMod : BaseMod
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Building mode equipped. Left place, right mine, middle pick block.";
     }

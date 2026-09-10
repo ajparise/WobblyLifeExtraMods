@@ -95,6 +95,7 @@ public sealed class RocketLauncherMod : BaseMod
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Rocket prop launcher equipped. Close F2, aim, and hold left-click.";
     }

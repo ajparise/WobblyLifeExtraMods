@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.14.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.15.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -26,6 +26,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Lava Gun:** fires molten projectiles that ignite hit surfaces, instantly respawn Wobblies, and immediately destroy vehicles without leaving rusty wrecks.
 - **Chaos Wand:** a color-changing random-effect weapon that launches, tornado-spins, floats, or confetti-blasts Wobblies, vehicles, and physics props.
 - **Portal Gun:** places linked blue and orange surface portals that teleport Wobblies, vehicles, and physics props while redirecting their momentum.
+- **Lightning Gun:** fires bright branching electricity that chains between nearby Wobblies, vehicles, and physics props with different shock reactions.
 
 ## Requirements
 
@@ -90,6 +91,8 @@ For a random surprise, open **Extra Mods → Chaos Wand** and choose **Equip Cha
 
 For portals, open **Extra Mods → Portal Gun** and choose **Equip Portal Gun**. Close F2, then left-click a solid surface to place the blue portal and right-click another surface to place the orange portal. Once both exist, Wobblies, occupied or empty vehicles, and movable physics props can travel in either direction. Linear and angular momentum are rotated to match the exit portal, with an adjustable outward boost and retrigger delay preventing immediate loops. Portal width and height can be enlarged for vehicles. Press **R** or use **Clear portals** to remove the pair. Placed portals remain active if the gun is unequipped, but are automatically cleared when leaving the world. Portal placement and physics require an offline game or the lobby host.
 
+For chain lightning, open **Extra Mods → Lightning Gun** and choose **Equip Lightning Gun**. Close F2, aim with the flashing blue-and-yellow crosshair, and left-click. The primary bolt strikes the aimed target and then selects unique nearby reactive targets up to the configured maximum. Wobblies ragdoll with an electrical jolt, vehicles receive a temporary velocity-damping EMP plus force and torque, and movable props are launched and spun. Every link is drawn as a short-lived jagged bolt with impact sparks. Range, chain distance, target count, shock force, EMP duration, cooldown, rapid fire, and chain line-of-sight are adjustable. Physics effects require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -104,4 +107,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.14.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.15.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

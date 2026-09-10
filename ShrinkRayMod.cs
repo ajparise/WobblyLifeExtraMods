@@ -81,6 +81,7 @@ public sealed class ShrinkRayMod : BaseMod
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = $"Shrink ray equipped in {ModeName()} mode. Press Q to toggle; right-click restores.";
     }

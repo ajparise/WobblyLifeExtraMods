@@ -101,6 +101,7 @@ public sealed class PropSpawnerGunMod : BaseMod
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Prop spawner gun equipped. Close the menu, aim, and left-click.";
     }

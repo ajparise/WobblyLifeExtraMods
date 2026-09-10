@@ -108,6 +108,7 @@ public sealed class PaintballGunMod : BaseMod
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Paintball gun equipped. Close F2, aim, and left-click.";
     }

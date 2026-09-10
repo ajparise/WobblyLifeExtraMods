@@ -74,6 +74,7 @@ public sealed class PortalGunMod : BaseMod
         CamouflagePropHuntMod.Unequip();
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Portal Gun equipped. Left-click blue, right-click orange, R clears.";
     }

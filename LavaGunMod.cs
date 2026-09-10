@@ -79,6 +79,7 @@ public sealed class LavaGunMod : BaseMod
         CamouflagePropHuntMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Lava gun equipped. Close F2, aim, and left-click.";
     }

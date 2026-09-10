@@ -9,7 +9,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "com.aj.wobblylife.extramods";
     public const string Name = "Wobbly Life Extra Mods";
-    public const string Version = "1.14.0";
+    public const string Version = "1.15.0";
 
     internal static BepInEx.Logging.ManualLogSource Log { get; private set; }
 
@@ -36,6 +36,7 @@ public sealed class Plugin : BaseUnityPlugin
         LavaGunMod.DrawCrosshair();
         ChaosWandMod.DrawCrosshair();
         PortalGunMod.DrawCrosshair();
+        LightningGunMod.DrawCrosshair();
     }
 
     internal static UnityEngine.Coroutine RunCoroutine(System.Collections.IEnumerator routine)

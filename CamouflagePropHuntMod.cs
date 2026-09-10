@@ -110,6 +110,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Camouflage equipped. Aim and press Q; movement locks until you press R to restore.";
     }

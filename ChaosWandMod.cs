@@ -68,6 +68,7 @@ public sealed class ChaosWandMod : BaseMod
         CamouflagePropHuntMod.Unequip();
         LavaGunMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Chaos Wand equipped. Close F2, aim, and left-click.";
     }

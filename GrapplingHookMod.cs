@@ -79,6 +79,7 @@ public sealed class GrapplingHookMod : BaseMod
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        LightningGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Grappling hook equipped. Left-click to attach; right-click to release.";
     }
