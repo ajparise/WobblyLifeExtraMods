@@ -83,6 +83,7 @@ public sealed class ShrinkRayMod : BaseMod
         PortalGunMod.Unequip();
         LightningGunMod.Unequip();
         WobblyHeadHomingGunMod.Unequip();
+        BananaPeelLauncherMod.Unequip();
         EquippedState.Value = true;
         Status.Value = $"Shrink ray equipped in {ModeName()} mode. Press Q to toggle; right-click restores.";
     }

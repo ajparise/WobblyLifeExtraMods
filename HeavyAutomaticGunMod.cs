@@ -109,6 +109,7 @@ public sealed class HeavyAutomaticGunMod : BaseMod
         PortalGunMod.Unequip();
         LightningGunMod.Unequip();
         WobblyHeadHomingGunMod.Unequip();
+        BananaPeelLauncherMod.Unequip();
         EquippedState.Value = true;
         rounds = MagazineCapacity;
         reloading = false;

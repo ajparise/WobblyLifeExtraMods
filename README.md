@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.16.2 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.17.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -28,6 +28,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Portal Gun:** places linked blue and orange surface portals that teleport Wobblies, vehicles, and physics props while redirecting their momentum.
 - **Lightning Gun:** fires bright branching electricity that chains between nearby Wobblies, vehicles, and physics props with different shock reactions.
 - **Wobbly Head Homing Gun:** a visible head-shaped handheld gun that fires smaller Wobbly heads with limited-turn predictive targeting of Wobblies, cars, and movable props.
+- **Banana Peel Launcher:** an unlimited-ammo handheld launcher with a peel mounted at its muzzle that fires giant peel projectiles and creates extreme-speed slip traps.
 
 ## Requirements
 
@@ -96,6 +97,8 @@ For chain lightning, open **Extra Mods → Lightning Gun** and choose **Equip Li
 
 For homing heads, open **Extra Mods → Wobbly Head Homing Gun** and choose **Equip head gun**. A large stylized Wobbly head with eyes and a mouth attaches to the right hand and follows the crosshair. Close F2 and left-click to fire a smaller physical Wobbly head from its mouth. The projectile selects the closest visible Wobbly, vehicle, or reasonably sized movable physics prop inside the configurable lock cone, predicts the target's movement, and turns toward it at a limited rate rather than snapping instantly. Buildings, houses, roads, terrain, mountains, bridges, and oversized world mechanisms are explicitly rejected by the homing filter, though an unaimed projectile can still collide with them normally. Fast or sharply turning targets can still evade it. Hits ragdoll Wobblies and shove or spin movable props. A car hit creates an immediate blast and directly removes the vehicle without entering the damaged-car replacement flow, so no rusty wreck remains. Projectile speed, turn rate, search range, lock angle, prediction, maximum prop size, impact force, fire interval, rapid fire, visibility checks, and head color are adjustable. Homing physics require an offline game or the lobby host.
 
+For giant banana peels, open **Extra Mods → Banana Peel Launcher** and choose **Equip peel launcher**. A yellow-and-green launcher attaches to the right hand with a visible four-strip banana peel mounted at the end. Close F2 and left-click to fire with unlimited ammunition; enable **Rapid fire** to hold the trigger. Peels default to ten times normal size. Direct hits immediately ragdoll and slide Wobblies or apply high-speed force and torque to vehicles and movable physics props. A peel that strikes static ground becomes a large trigger trap for the configured lifetime. The slip speed defaults to ten times the normal six-metre-per-second baseline. Peel size, slip multiplier, launch speed, trap lifetime, fire interval, rapid fire, and ripeness color are adjustable. Physics effects require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -110,4 +113,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.16.2 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.17.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
