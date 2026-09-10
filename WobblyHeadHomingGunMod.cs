@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using FMODUnity;
@@ -265,6 +266,14 @@ public sealed class WobblyHeadHomingGunMod : BaseMod
         else
         {
             var vehicle = collision.collider.GetComponentInParent<PlayerVehicle>();
+            if (vehicle)
+            {
+                CreateVehicleExplosion(point, vehicle);
+                vehicle.DestroyGameObject();
+                Status.Value = "Homing head instantly exploded the vehicle; rusty wreck skipped.";
+                CreateHeadBurst(point);
+                return;
+            }
             var body = vehicle
                 ? vehicle.GetComponent<Rigidbody>() ?? vehicle.GetComponentInChildren<Rigidbody>(true)
                 : collision.rigidbody;
@@ -278,6 +287,42 @@ public sealed class WobblyHeadHomingGunMod : BaseMod
             }
         }
         CreateHeadBurst(point);
+    }
+
+    private static void CreateVehicleExplosion(Vector3 point, PlayerVehicle vehicle)
+    {
+        var flash = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        flash.name = "Homing Head Vehicle Explosion";
+        flash.transform.position = point;
+        flash.transform.localScale = Vector3.one * 0.35f;
+        var flashCollider = flash.GetComponent<Collider>();
+        if (flashCollider) flashCollider.enabled = false;
+        var shader = Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color");
+        var material = new Material(shader) { color = new Color(1f, 0.24f, 0.015f, 0.96f) };
+        flash.GetComponent<Renderer>().material = material;
+        Plugin.RunCoroutine(AnimateVehicleExplosion(flash, material));
+
+        foreach (var nearby in Physics.OverlapSphere(point, 6f, ~0, QueryTriggerInteraction.Ignore))
+        {
+            var body = nearby.attachedRigidbody;
+            if (!body || body.isKinematic || body.GetComponentInParent<PlayerVehicle>() == vehicle) continue;
+            body.AddExplosionForce(1100f, point, 6f, 2.5f, ForceMode.Impulse);
+        }
+    }
+
+    private static IEnumerator AnimateVehicleExplosion(GameObject flash, Material material)
+    {
+        var elapsed = 0f;
+        while (flash && elapsed < 0.38f)
+        {
+            elapsed += Time.deltaTime;
+            var progress = Mathf.Clamp01(elapsed / 0.38f);
+            flash.transform.localScale = Vector3.one * Mathf.Lerp(0.35f, 8f, progress);
+            material.color = new Color(1f, Mathf.Lerp(0.45f, 0.03f, progress), 0.01f, 1f - progress);
+            yield return null;
+        }
+        if (flash) Object.Destroy(flash);
+        if (material) Object.Destroy(material);
     }
 
     private static void EnsureGunModel()
