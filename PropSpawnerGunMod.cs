@@ -102,6 +102,7 @@ public sealed class PropSpawnerGunMod : BaseMod
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
         LightningGunMod.Unequip();
+        WobblyHeadHomingGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Prop spawner gun equipped. Close the menu, aim, and left-click.";
     }

@@ -79,6 +79,7 @@ public sealed class LightningGunMod : BaseMod
         LavaGunMod.Unequip();
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
+        WobblyHeadHomingGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Lightning Gun equipped. Close F2, aim, and left-click.";
     }

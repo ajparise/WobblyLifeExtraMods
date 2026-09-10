@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.15.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.16.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -27,6 +27,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Chaos Wand:** a color-changing random-effect weapon that launches, tornado-spins, floats, or confetti-blasts Wobblies, vehicles, and physics props.
 - **Portal Gun:** places linked blue and orange surface portals that teleport Wobblies, vehicles, and physics props while redirecting their momentum.
 - **Lightning Gun:** fires bright branching electricity that chains between nearby Wobblies, vehicles, and physics props with different shock reactions.
+- **Wobbly Head Homing Gun:** a visible head-shaped handheld gun that fires smaller Wobbly heads with limited-turn predictive targeting of Wobblies, cars, and movable props.
 
 ## Requirements
 
@@ -93,6 +94,8 @@ For portals, open **Extra Mods → Portal Gun** and choose **Equip Portal Gun**.
 
 For chain lightning, open **Extra Mods → Lightning Gun** and choose **Equip Lightning Gun**. Close F2, aim with the flashing blue-and-yellow crosshair, and left-click. The primary bolt strikes the aimed target and then selects unique nearby reactive targets up to the configured maximum. Wobblies ragdoll with an electrical jolt, vehicles receive a temporary velocity-damping EMP plus force and torque, and movable props are launched and spun. Every link is drawn as a short-lived jagged bolt with impact sparks. Range, chain distance, target count, shock force, EMP duration, cooldown, rapid fire, and chain line-of-sight are adjustable. Physics effects require an offline game or the lobby host.
 
+For homing heads, open **Extra Mods → Wobbly Head Homing Gun** and choose **Equip head gun**. A large stylized Wobbly head with eyes and a mouth attaches to the right hand and follows the crosshair. Close F2 and left-click to fire a smaller physical Wobbly head from its mouth. The projectile selects the closest visible Wobbly, vehicle, or movable physics prop inside the configurable lock cone, predicts the target's movement, and turns toward it at a limited rate rather than snapping instantly. This means fast or sharply turning targets can still evade it. Hits ragdoll Wobblies and shove or spin vehicles and props. Projectile speed, turn rate, search range, lock angle, prediction, impact force, fire interval, rapid fire, visibility checks, and head color are adjustable. Homing physics require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -107,4 +110,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.15.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.16.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

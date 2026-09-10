@@ -81,6 +81,7 @@ public sealed class WindCannonMod : BaseMod
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
         LightningGunMod.Unequip();
+        WobblyHeadHomingGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Wind cannon equipped. Close the menu, aim, and left-click to fire.";
     }

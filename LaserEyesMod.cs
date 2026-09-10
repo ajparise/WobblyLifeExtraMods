@@ -78,6 +78,7 @@ public sealed class LaserEyesMod : BaseMod
         ChaosWandMod.Unequip();
         PortalGunMod.Unequip();
         LightningGunMod.Unequip();
+        WobblyHeadHomingGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Laser eyes equipped. Close F2, aim, and press Q to explode the target.";
     }
