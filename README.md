@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.17.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.18.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -29,6 +29,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Lightning Gun:** fires bright branching electricity that chains between nearby Wobblies, vehicles, and physics props with different shock reactions.
 - **Wobbly Head Homing Gun:** a visible head-shaped handheld gun that fires smaller Wobbly heads with limited-turn predictive targeting of Wobblies, cars, and movable props.
 - **Banana Peel Launcher:** an unlimited-ammo handheld launcher with a peel mounted at its muzzle that fires giant peel projectiles and creates extreme-speed slip traps.
+- **Every Fish Reel:** completes a real fishing catch in one reel with randomized pull power, then records every genuine fish species through the native fishing-mission save system.
 
 ## Requirements
 
@@ -99,6 +100,8 @@ For homing heads, open **Extra Mods → Wobbly Head Homing Gun** and choose **Eq
 
 For giant banana peels, open **Extra Mods → Banana Peel Launcher** and choose **Equip peel launcher**. A yellow-and-green launcher attaches to the right hand with a visible four-strip banana peel mounted at the end. Close F2 and left-click to fire with unlimited ammunition; enable **Rapid fire** to hold the trigger. Peels default to ten times normal size. Direct hits immediately ragdoll and slide Wobblies or apply high-speed force and torque to vehicles and movable physics props. A peel that strikes static ground becomes a large trigger trap for the configured lifetime. The slip speed defaults to ten times the normal six-metre-per-second baseline. Peel size, slip multiplier, launch speed, trap lifetime, fire interval, rapid fire, and ripeness color are adjustable. Physics effects require an offline game or the lobby host.
 
+For all fish in one reel, open **Extra Mods → Every Fish Reel** and choose **Enable**. Enter and use a normal fishing rod, cast normally, and wait for a bite. The first reel input completes the normal catch meter immediately while selecting a random pull power between the configured minimum and maximum. When that genuine catch reaches the game's server-side fish mission, the mod enumerates every real fish from every installed fishing area, adds missing species through `WorldMissionFishing.IncrementCaughtCount`, runs the native all-fish completion check, and saves the mission normally. Disable **Only add missing fish** to increment existing catch counts too. The collection update requires an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -113,4 +116,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.17.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.18.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
