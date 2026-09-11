@@ -18,8 +18,6 @@ public sealed class LightningGunMod : BaseMod
 {
     private const string NativeStrikeAddress =
         "Assets/Content/Game/Prefabs/Particles/Weather/Lightning Strike.prefab";
-    private const string NativeBeamAddress =
-        "Assets/Content/Game/Prefabs/Particles/Pets/Electricity Beam Particle.prefab";
     private static readonly Ref<bool> EquippedState = new();
     private static readonly Ref<string> Status = new("Lightning Gun is unequipped.");
     private static float nextFireTime;
@@ -71,7 +69,7 @@ public sealed class LightningGunMod : BaseMod
         return new Container(id,
             new TextWrapped("LightningGunHelp",
                 "Equip, close F2, aim with the electric crosshair, and hold left-click for rapid fire. The visuals are loaded " +
-                "directly from Wobbly Life's built-in Weather/Lightning Strike and Pets/Electricity Beam prefabs. Bolts chain " +
+                "directly from Wobbly Life's built-in Weather/Lightning Strike prefab at its original scale. Strikes chain " +
                 "between targets, while optional random bonuses add super-launch, shockwave, stasis, anti-gravity, or spin effects. " +
                 "Physics effects require offline play or the lobby host."),
             base.BuildPanel(id),
@@ -151,20 +149,18 @@ public sealed class LightningGunMod : BaseMod
         var hit = hits.FirstOrDefault(item => item.collider && !item.transform.IsChildOf(shooter.transform));
         if (!hit.collider)
         {
-            SpawnNativeLightning(ray.origin, ray.origin + ray.direction * Range.Value, false);
+            SpawnNativeStrike(ray.origin + ray.direction * Range.Value);
             Status.Value = "Native lightning fired but found no conductor.";
             return;
         }
 
         var first = BuildTarget(hit.collider, hit.point, shooter);
         var targets = BuildChain(first, shooter);
-        var previous = ray.origin;
         for (var i = 0; i < targets.Count; i++)
         {
             var target = targets[i];
-            SpawnNativeLightning(previous, target.Point, true);
+            SpawnNativeStrike(target.Point);
             ApplyShock(target, shooter);
-            previous = target.Point;
         }
 
         var bonus = first.IsReactive ? ApplyRandomBonus(first, shooter) : string.Empty;
@@ -335,50 +331,36 @@ public sealed class LightningGunMod : BaseMod
             target.Body.AddForce(velocity, ForceMode.VelocityChange);
     }
 
-    private static void SpawnNativeLightning(Vector3 start, Vector3 end, bool strikeAtEnd)
+    private static void SpawnNativeStrike(Vector3 point)
     {
         // Cap outstanding Addressables requests during extreme rapid fire so effects cannot accumulate indefinitely.
         if (nativeEffectsInFlight > 48) return;
-        Plugin.RunCoroutine(SpawnNativeLightningRoutine(start, end, strikeAtEnd));
+        Plugin.RunCoroutine(SpawnNativeStrikeRoutine(point));
     }
 
-    private static IEnumerator SpawnNativeLightningRoutine(Vector3 start, Vector3 end, bool strikeAtEnd)
+    private static IEnumerator SpawnNativeStrikeRoutine(Vector3 point)
     {
         nativeEffectsInFlight++;
-        var offset = end - start;
-        var distance = Mathf.Max(0.1f, offset.magnitude);
-        var beamHandle = Addressables.InstantiateAsync(NativeBeamAddress, start,
-            Quaternion.LookRotation(offset / distance, Vector3.up));
-        yield return beamHandle;
-        if (beamHandle.Status == AsyncOperationStatus.Succeeded && beamHandle.Result)
+        var count = Mathf.Clamp(StrikeBurst.Value, 1, 4);
+        for (var i = 0; i < count; i++)
         {
-            // The native pet beam is authored on its forward axis. Stretch only that axis to join the targets.
-            var scale = beamHandle.Result.transform.localScale;
-            beamHandle.Result.transform.localScale = new Vector3(scale.x, scale.y, scale.z * distance);
-            beamHandle.Result.AddComponent<NativeLightningCleanup>().Configure(0.45f);
-        }
-        else
-        {
-            if (beamHandle.IsValid()) Addressables.Release(beamHandle);
-            Plugin.Log?.LogWarning($"Could not load native lightning beam: {NativeBeamAddress}");
-        }
-
-        if (strikeAtEnd)
-        {
-            var count = Mathf.Clamp(StrikeBurst.Value, 1, 4);
-            for (var i = 0; i < count; i++)
+            // Preserve the prefab's authored rotation and scale. The old version stretched a pet beam,
+            // which looked electrical but no longer resembled Wobbly Life's weather lightning.
+            var position = point;
+            if (i > 0)
             {
-                var position = end + UnityEngine.Random.insideUnitSphere * 0.18f;
-                position.y = end.y;
-                var strikeHandle = Addressables.InstantiateAsync(NativeStrikeAddress, position, Quaternion.identity);
-                yield return strikeHandle;
-                if (strikeHandle.Status == AsyncOperationStatus.Succeeded && strikeHandle.Result)
-                    strikeHandle.Result.AddComponent<NativeLightningCleanup>().Configure(2.5f);
-                else
-                {
-                    if (strikeHandle.IsValid()) Addressables.Release(strikeHandle);
-                    Plugin.Log?.LogWarning($"Could not load native lightning strike: {NativeStrikeAddress}");
-                }
+                var jitter = UnityEngine.Random.insideUnitSphere * 0.12f;
+                jitter.y = 0f;
+                position += jitter;
+            }
+            var strikeHandle = Addressables.InstantiateAsync(NativeStrikeAddress, position, Quaternion.identity);
+            yield return strikeHandle;
+            if (strikeHandle.Status == AsyncOperationStatus.Succeeded && strikeHandle.Result)
+                strikeHandle.Result.AddComponent<NativeLightningCleanup>().Configure(2.5f);
+            else
+            {
+                if (strikeHandle.IsValid()) Addressables.Release(strikeHandle);
+                Plugin.Log?.LogWarning($"Could not load native lightning strike: {NativeStrikeAddress}");
             }
         }
         nativeEffectsInFlight = Mathf.Max(0, nativeEffectsInFlight - 1);

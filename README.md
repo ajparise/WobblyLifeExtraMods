@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.20.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.20.1 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -26,7 +26,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Lava Gun:** fires molten projectiles that ignite hit surfaces, instantly respawn Wobblies, and immediately destroy vehicles without leaving rusty wrecks.
 - **Chaos Wand:** a color-changing random-effect weapon that launches, tornado-spins, floats, or confetti-blasts Wobblies, vehicles, and physics props.
 - **Portal Gun:** places linked blue and orange surface portals that teleport Wobblies, vehicles, and physics props while redirecting their momentum.
-- **Lightning Gun:** rapid-fires Wobbly Life's native lightning-strike and electricity-beam prefabs, chains between nearby targets, and adds randomized shock powers.
+- **Lightning Gun:** rapid-fires Wobbly Life's unscaled native weather lightning-strike prefab, chains between nearby targets, and adds randomized shock powers.
 - **Wobbly Head Homing Gun:** a visible head-shaped handheld gun that fires smaller Wobbly heads with limited-turn predictive targeting of Wobblies, cars, and movable props.
 - **Banana Peel Launcher:** an unlimited-ammo handheld launcher with a peel mounted at its muzzle that fires giant peel projectiles and creates extreme-speed slip traps.
 - **Every Fish Reel:** completes a real fishing catch in one reel with randomized pull power, then records every genuine fish species through the native fishing-mission save system.
@@ -95,7 +95,7 @@ For a random surprise, open **Extra Mods → Chaos Wand** and choose **Equip Cha
 
 For portals, open **Extra Mods → Portal Gun** and choose **Equip Portal Gun**. Close F2, then left-click a solid surface to place the blue portal and right-click another surface to place the orange portal. Once both exist, Wobblies, occupied or empty vehicles, and movable physics props can travel in either direction. Linear and angular momentum are rotated to match the exit portal, with an adjustable outward boost and retrigger delay preventing immediate loops. Portal width and height can be enlarged for vehicles. Press **R** or use **Clear portals** to remove the pair. Placed portals remain active if the gun is unequipped, but are automatically cleared when leaving the world. Portal placement and physics require an offline game or the lobby host.
 
-For chain lightning, open **Extra Mods → Lightning Gun** and choose **Equip Lightning Gun**. Close F2, aim with the flashing blue-and-yellow crosshair, and hold left-click for rapid fire. The visuals load directly from the game's built-in `Weather/Lightning Strike.prefab` and `Pets/Electricity Beam Particle.prefab`; the old custom-drawn bolt is no longer used. The primary beam hits the aimed target and chains to unique nearby reactive targets. Wobblies ragdoll, vehicles receive an EMP, and props launch and spin. Optional random bonuses add a super launch, thunder shockwave, static stasis, anti-gravity, or electric spin. Range, chain distance, target count, shock force, EMP duration, cooldown, line-of-sight, bonus chance/strength, and native strike burst are adjustable. Physics effects require an offline game or the lobby host.
+For chain lightning, open **Extra Mods → Lightning Gun** and choose **Equip Lightning Gun**. Close F2, aim with the flashing blue-and-yellow crosshair, and hold left-click for rapid fire. Every visible strike loads directly from the game's built-in `Weather/Lightning Strike.prefab` at its original authored rotation and scale. The stretched pet-electricity beam from v1.20.0 is no longer used. The primary strike hits the aimed target and chains to unique nearby reactive targets. Wobblies ragdoll, vehicles receive an EMP, and props launch and spin. Optional random bonuses add a super launch, thunder shockwave, static stasis, anti-gravity, or electric spin. Range, chain distance, target count, shock force, EMP duration, cooldown, line-of-sight, bonus chance/strength, and native strike burst are adjustable. Physics effects require an offline game or the lobby host.
 
 For homing heads, open **Extra Mods → Wobbly Head Homing Gun** and choose **Equip head gun**. A large stylized Wobbly head with eyes and a mouth attaches to the right hand and follows the crosshair. Close F2 and left-click to fire a smaller physical Wobbly head from its mouth. The projectile selects the closest visible Wobbly, vehicle, or reasonably sized movable physics prop inside the configurable lock cone, predicts the target's movement, and turns toward it at a limited rate rather than snapping instantly. Buildings, houses, roads, terrain, mountains, bridges, and oversized world mechanisms are explicitly rejected by the homing filter, though an unaimed projectile can still collide with them normally. Fast or sharply turning targets can still evade it. Hits ragdoll Wobblies and shove or spin movable props. A car hit creates an immediate blast and directly removes the vehicle without entering the damaged-car replacement flow, so no rusty wreck remains. Projectile speed, turn rate, search range, lock angle, prediction, maximum prop size, impact force, fire interval, rapid fire, visibility checks, and head color are adjustable. Homing physics require an offline game or the lobby host.
 
@@ -119,4 +119,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.20.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.20.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
