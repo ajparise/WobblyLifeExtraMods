@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.20.1 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.21.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -31,6 +31,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Banana Peel Launcher:** an unlimited-ammo handheld launcher with a peel mounted at its muzzle that fires giant peel projectiles and creates extreme-speed slip traps.
 - **Every Fish Reel:** completes a real fishing catch in one reel with randomized pull power, then records every genuine fish species through the native fishing-mission save system.
 - **Tornado Gun:** launches moving visible tornadoes that pull in, lift, spin, and finally throw Wobblies, vehicles, and movable physics props.
+- **Firework Minigun:** an unlimited fully automatic six-barrel launcher whose rockets create native colored firework bursts and launch nearby targets skyward.
 
 ## Requirements
 
@@ -105,6 +106,8 @@ For all fish in one reel, open **Extra Mods → Every Fish Reel** and choose **E
 
 For tornadoes, open **Extra Mods → Tornado Gun** and choose **Equip Tornado Gun**. Close F2 and left-click to launch a visible moving cyclone along the crosshair. Objects inside its radius are pulled toward the funnel, lifted, and spun before receiving a final outward throw when the tornado expires. The firing Wobbly is excluded. Radius, height, inward pull, spin, lift, final throw, lifetime, travel speed, distance, fire interval, rapid fire, and the active-tornado limit are adjustable. Use **Clear tornadoes** to remove them early. Tornado physics require an offline game or the lobby host.
 
+For fireworks, open **Extra Mods → Firework Minigun** and choose **Equip Firework Minigun**. A large six-barrel weapon attaches to the local Wobbly's right hand and spins while firing. Close F2 and hold left-click for fully automatic rockets with unlimited ammunition. Each rocket explodes on impact or after its fuse and randomly loads the game's genuine blue, green, purple, or red `Particles/Fireworks` prefab. The blast ragdolls and launches Wobblies upward while throwing vehicles and movable props into the sky; every rigidbody belonging to the firing player is excluded. Rocket speed, fire interval, fuse, blast radius, launch strength, impact detonation, random colors, and the active-rocket limit are adjustable. Physics effects require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -119,4 +122,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.20.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.21.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

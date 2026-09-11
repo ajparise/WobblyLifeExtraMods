@@ -181,6 +181,7 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
         WobblyHeadHomingGunMod.Unequip();
         BananaPeelLauncherMod.Unequip();
         TornadoGunMod.Unequip();
+        FireworkMinigunMod.Unequip();
         gunMode = mode;
         EquippedState.Value = true;
         Status.Value = $"{label} gun equipped. Close F2, aim, and hold left-click.";

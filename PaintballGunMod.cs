@@ -112,6 +112,7 @@ public sealed class PaintballGunMod : BaseMod
         WobblyHeadHomingGunMod.Unequip();
         BananaPeelLauncherMod.Unequip();
         TornadoGunMod.Unequip();
+        FireworkMinigunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Paintball gun equipped. Close F2, aim, and left-click.";
     }

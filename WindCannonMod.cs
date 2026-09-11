@@ -84,6 +84,7 @@ public sealed class WindCannonMod : BaseMod
         WobblyHeadHomingGunMod.Unequip();
         BananaPeelLauncherMod.Unequip();
         TornadoGunMod.Unequip();
+        FireworkMinigunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Wind cannon equipped. Close the menu, aim, and left-click to fire.";
     }
