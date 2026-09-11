@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using lstwoMODS_Core.Hacks;
@@ -7,19 +8,26 @@ using lstwoMODS_Core.UI.Elements;
 using lstwoMODS_Core.UI.TabMenus;
 using lstwoMODS_WobblyLife.PropSpawner;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 
 namespace WobblyLifeExtraMods;
 
 /// <summary>A chain-lightning hitscan weapon with character, vehicle, and prop reactions.</summary>
 public sealed class LightningGunMod : BaseMod
 {
+    private const string NativeStrikeAddress =
+        "Assets/Content/Game/Prefabs/Particles/Weather/Lightning Strike.prefab";
+    private const string NativeBeamAddress =
+        "Assets/Content/Game/Prefabs/Particles/Pets/Electricity Beam Particle.prefab";
     private static readonly Ref<bool> EquippedState = new();
     private static readonly Ref<string> Status = new("Lightning Gun is unequipped.");
     private static float nextFireTime;
+    private static int nativeEffectsInFlight;
 
     public override string Name => "Lightning Gun";
     public override string Description =>
-        "Fire branching electricity that chains through nearby Wobblies, vehicles, and physics props.";
+        "Fire the game's native lightning effects with rapid chain shocks and randomized impact powers.";
     public override ModsWindow ModsWindow => lstwoMODS_WobblyLife.Plugin.ExtraModsWindow;
 
     [ModSetting(Order = 10, Min = 20f, Max = 600f, Label = "Primary range")]
@@ -41,17 +49,30 @@ public sealed class LightningGunMod : BaseMod
     public static Ref<float> Cooldown = new(0.35f);
 
     [ModSetting(Order = 70, Label = "Rapid fire")]
-    public static Ref<bool> RapidFire = new();
+    public static Ref<bool> RapidFire = new(true);
 
     [ModSetting(Order = 80, Label = "Chain requires line of sight")]
     public static Ref<bool> RequireLineOfSight = new(true);
+
+    [ModSetting(Order = 90, Label = "Random bonus effects")]
+    public static Ref<bool> RandomBonuses = new(true);
+
+    [ModSetting(Order = 100, Min = 0f, Max = 1f, Label = "Random bonus chance")]
+    public static Ref<float> BonusChance = new(0.7f);
+
+    [ModSetting(Order = 110, Min = 5f, Max = 80f, Label = "Random bonus strength")]
+    public static Ref<float> BonusStrength = new(30f);
+
+    [ModSetting(Order = 120, Min = 1f, Max = 4f, Label = "Native strike burst")]
+    public static Ref<int> StrikeBurst = new(2);
 
     public override Container BuildPanel(string id)
     {
         return new Container(id,
             new TextWrapped("LightningGunHelp",
-                "Equip, close F2, aim with the electric crosshair, and left-click. The first bolt hits the aimed surface, " +
-                "then jumps to unique nearby targets. Wobblies ragdoll, cars receive an EMP jolt, and loose props launch and spin. " +
+                "Equip, close F2, aim with the electric crosshair, and hold left-click for rapid fire. The visuals are loaded " +
+                "directly from Wobbly Life's built-in Weather/Lightning Strike and Pets/Electricity Beam prefabs. Bolts chain " +
+                "between targets, while optional random bonuses add super-launch, shockwave, stasis, anti-gravity, or spin effects. " +
                 "Physics effects require offline play or the lobby host."),
             base.BuildPanel(id),
             new HStack("LightningGunActions",
@@ -130,8 +151,8 @@ public sealed class LightningGunMod : BaseMod
         var hit = hits.FirstOrDefault(item => item.collider && !item.transform.IsChildOf(shooter.transform));
         if (!hit.collider)
         {
-            CreateBolt(ray.origin, ray.origin + ray.direction * Range.Value, 0);
-            Status.Value = "Lightning fired but found no conductor.";
+            SpawnNativeLightning(ray.origin, ray.origin + ray.direction * Range.Value, false);
+            Status.Value = "Native lightning fired but found no conductor.";
             return;
         }
 
@@ -141,15 +162,16 @@ public sealed class LightningGunMod : BaseMod
         for (var i = 0; i < targets.Count; i++)
         {
             var target = targets[i];
-            CreateBolt(previous, target.Point, i);
-            CreateSparks(target.Point, i);
+            SpawnNativeLightning(previous, target.Point, true);
             ApplyShock(target, shooter);
             previous = target.Point;
         }
 
+        var bonus = first.IsReactive ? ApplyRandomBonus(first, shooter) : string.Empty;
+
         Status.Value = targets.Count == 1
-            ? "Lightning struck 1 target."
-            : $"Chain lightning struck {targets.Count} targets!";
+            ? $"Native lightning struck 1 target.{bonus}"
+            : $"Native chain lightning struck {targets.Count} targets!{bonus}";
     }
 
     private static List<LightningTarget> BuildChain(LightningTarget first, PlayerCharacter shooter)
@@ -249,55 +271,117 @@ public sealed class LightningGunMod : BaseMod
         target.Body.AddTorque(UnityEngine.Random.onUnitSphere * force * 1.5f, ForceMode.VelocityChange);
     }
 
-    private static void CreateBolt(Vector3 start, Vector3 end, int chainIndex)
+    private static string ApplyRandomBonus(LightningTarget target, PlayerCharacter shooter)
     {
-        var root = new GameObject("ExtraMods Lightning Bolt");
-        var line = root.AddComponent<LineRenderer>();
-        const int points = 10;
-        line.positionCount = points;
-        line.useWorldSpace = true;
-        line.startWidth = chainIndex == 0 ? 0.095f : 0.065f;
-        line.endWidth = 0.018f;
-        line.startColor = Color.white;
-        line.endColor = chainIndex % 2 == 0 ? new Color(0.05f, 0.65f, 1f, 1f) :
-            new Color(1f, 0.9f, 0.15f, 1f);
-        var shader = Shader.Find("Sprites/Default") ?? Shader.Find("Unlit/Color");
-        if (shader) line.material = new Material(shader);
-
-        var direction = end - start;
-        var right = Vector3.Cross(direction.normalized, Vector3.up);
-        if (right.sqrMagnitude < 0.01f) right = Vector3.right;
-        var up = Vector3.Cross(right, direction.normalized).normalized;
-        right.Normalize();
-        for (var i = 0; i < points; i++)
+        if (!RandomBonuses.Value || UnityEngine.Random.value > Mathf.Clamp01(BonusChance.Value)) return string.Empty;
+        var strength = Mathf.Max(5f, BonusStrength.Value);
+        var mode = UnityEngine.Random.Range(0, 5);
+        var body = target.Body;
+        switch (mode)
         {
-            var progress = i / (points - 1f);
-            var taper = Mathf.Sin(progress * Mathf.PI);
-            var jitter = (right * UnityEngine.Random.Range(-0.28f, 0.28f) +
-                          up * UnityEngine.Random.Range(-0.28f, 0.28f)) * taper;
-            line.SetPosition(i, Vector3.Lerp(start, end, progress) + jitter);
+            case 0:
+                ApplyBonusVelocity(target, Vector3.up * strength + UnityEngine.Random.onUnitSphere * strength * 0.25f);
+                return " Bonus: SUPER LAUNCH!";
+            case 1:
+                foreach (var collider in Physics.OverlapSphere(target.Point, 8f, ~0, QueryTriggerInteraction.Ignore))
+                {
+                    if (!collider || collider.transform.IsChildOf(shooter.transform)) continue;
+                    var nearby = collider.attachedRigidbody;
+                    if (!nearby || nearby.isKinematic || nearby == body) continue;
+                    var away = nearby.worldCenterOfMass - target.Point;
+                    if (away.sqrMagnitude < 0.05f) away = UnityEngine.Random.onUnitSphere;
+                    nearby.AddForce((away.normalized + Vector3.up * 0.45f).normalized * strength * 0.65f,
+                        ForceMode.VelocityChange);
+                }
+                return " Bonus: THUNDER SHOCKWAVE!";
+            case 2:
+                if (body)
+                {
+                    var stasis = body.GetComponent<LightningStasisEffect>() ??
+                                  body.gameObject.AddComponent<LightningStasisEffect>();
+                    stasis.Configure(2.2f);
+                }
+                return " Bonus: STATIC STASIS!";
+            case 3:
+                if (body)
+                {
+                    var floating = body.GetComponent<LightningFloatEffect>() ??
+                                   body.gameObject.AddComponent<LightningFloatEffect>();
+                    floating.Configure(3.5f);
+                }
+                ApplyBonusVelocity(target, Vector3.up * strength * 0.45f);
+                return " Bonus: ANTI-GRAVITY!";
+            default:
+                if (body && !body.isKinematic)
+                {
+                    body.AddTorque(UnityEngine.Random.onUnitSphere * strength * 2f, ForceMode.VelocityChange);
+                    body.AddForce(Vector3.up * strength * 0.25f, ForceMode.VelocityChange);
+                }
+                return " Bonus: ELECTRIC SPIN!";
         }
-        UnityEngine.Object.Destroy(root, 0.18f);
     }
 
-    private static void CreateSparks(Vector3 point, int colorOffset)
+    private static void ApplyBonusVelocity(LightningTarget target, Vector3 velocity)
     {
-        for (var i = 0; i < 8; i++)
+        if (target.Character)
         {
-            var spark = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-            spark.name = "Lightning Spark";
-            var collider = spark.GetComponent<Collider>();
-            if (collider) collider.enabled = false;
-            spark.transform.position = point + UnityEngine.Random.insideUnitSphere * 0.18f;
-            spark.transform.localScale = Vector3.one * UnityEngine.Random.Range(0.035f, 0.09f);
-            spark.GetComponent<Renderer>().material.color = (i + colorOffset) % 2 == 0
-                ? new Color(0.1f, 0.75f, 1f, 1f)
-                : new Color(1f, 0.9f, 0.15f, 1f);
-            var body = spark.AddComponent<Rigidbody>();
-            body.useGravity = false;
-            body.velocity = UnityEngine.Random.onUnitSphere * UnityEngine.Random.Range(2f, 6f);
-            UnityEngine.Object.Destroy(spark, 0.35f);
+            var ragdoll = target.Character.GetRagdollController();
+            var playerBody = target.Character.GetComponentInChildren<PlayerBody>(true);
+            if (ragdoll) ragdoll.Ragdoll();
+            if (playerBody) playerBody.SetRagdollVelocity(velocity);
+            return;
         }
+        if (target.Body && !target.Body.isKinematic)
+            target.Body.AddForce(velocity, ForceMode.VelocityChange);
+    }
+
+    private static void SpawnNativeLightning(Vector3 start, Vector3 end, bool strikeAtEnd)
+    {
+        // Cap outstanding Addressables requests during extreme rapid fire so effects cannot accumulate indefinitely.
+        if (nativeEffectsInFlight > 48) return;
+        Plugin.RunCoroutine(SpawnNativeLightningRoutine(start, end, strikeAtEnd));
+    }
+
+    private static IEnumerator SpawnNativeLightningRoutine(Vector3 start, Vector3 end, bool strikeAtEnd)
+    {
+        nativeEffectsInFlight++;
+        var offset = end - start;
+        var distance = Mathf.Max(0.1f, offset.magnitude);
+        var beamHandle = Addressables.InstantiateAsync(NativeBeamAddress, start,
+            Quaternion.LookRotation(offset / distance, Vector3.up));
+        yield return beamHandle;
+        if (beamHandle.Status == AsyncOperationStatus.Succeeded && beamHandle.Result)
+        {
+            // The native pet beam is authored on its forward axis. Stretch only that axis to join the targets.
+            var scale = beamHandle.Result.transform.localScale;
+            beamHandle.Result.transform.localScale = new Vector3(scale.x, scale.y, scale.z * distance);
+            beamHandle.Result.AddComponent<NativeLightningCleanup>().Configure(0.45f);
+        }
+        else
+        {
+            if (beamHandle.IsValid()) Addressables.Release(beamHandle);
+            Plugin.Log?.LogWarning($"Could not load native lightning beam: {NativeBeamAddress}");
+        }
+
+        if (strikeAtEnd)
+        {
+            var count = Mathf.Clamp(StrikeBurst.Value, 1, 4);
+            for (var i = 0; i < count; i++)
+            {
+                var position = end + UnityEngine.Random.insideUnitSphere * 0.18f;
+                position.y = end.y;
+                var strikeHandle = Addressables.InstantiateAsync(NativeStrikeAddress, position, Quaternion.identity);
+                yield return strikeHandle;
+                if (strikeHandle.Status == AsyncOperationStatus.Succeeded && strikeHandle.Result)
+                    strikeHandle.Result.AddComponent<NativeLightningCleanup>().Configure(2.5f);
+                else
+                {
+                    if (strikeHandle.IsValid()) Addressables.Release(strikeHandle);
+                    Plugin.Log?.LogWarning($"Could not load native lightning strike: {NativeStrikeAddress}");
+                }
+            }
+        }
+        nativeEffectsInFlight = Mathf.Max(0, nativeEffectsInFlight - 1);
     }
 
     internal static void DrawCrosshair()
@@ -349,5 +433,62 @@ internal sealed class LightningEmpEffect : MonoBehaviour
         }
         body.velocity *= 0.91f;
         body.angularVelocity *= 0.88f;
+    }
+}
+
+internal sealed class LightningStasisEffect : MonoBehaviour
+{
+    private Rigidbody body;
+    private float expiresAt;
+
+    internal void Configure(float duration)
+    {
+        body = GetComponent<Rigidbody>();
+        expiresAt = Mathf.Max(expiresAt, Time.time + duration);
+    }
+
+    private void FixedUpdate()
+    {
+        if (!body || Time.time >= expiresAt)
+        {
+            Destroy(this);
+            return;
+        }
+        body.velocity *= 0.72f;
+        body.angularVelocity *= 0.62f;
+    }
+}
+
+internal sealed class LightningFloatEffect : MonoBehaviour
+{
+    private Rigidbody body;
+    private float expiresAt;
+
+    internal void Configure(float duration)
+    {
+        body = GetComponent<Rigidbody>();
+        expiresAt = Mathf.Max(expiresAt, Time.time + duration);
+    }
+
+    private void FixedUpdate()
+    {
+        if (!body || Time.time >= expiresAt)
+        {
+            Destroy(this);
+            return;
+        }
+        body.AddForce(-Physics.gravity * 1.12f + Vector3.up * 0.8f, ForceMode.Acceleration);
+    }
+}
+
+internal sealed class NativeLightningCleanup : MonoBehaviour
+{
+    private float releaseAt;
+    internal void Configure(float duration) => releaseAt = Time.time + duration;
+
+    private void Update()
+    {
+        if (Time.time < releaseAt) return;
+        Addressables.ReleaseInstance(gameObject);
     }
 }
