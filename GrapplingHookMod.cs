@@ -82,6 +82,7 @@ public sealed class GrapplingHookMod : BaseMod
         LightningGunMod.Unequip();
         WobblyHeadHomingGunMod.Unequip();
         BananaPeelLauncherMod.Unequip();
+        TornadoGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Grappling hook equipped. Left-click to attach; right-click to release.";
     }

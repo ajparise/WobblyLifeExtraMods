@@ -77,6 +77,7 @@ public sealed class PortalGunMod : BaseMod
         LightningGunMod.Unequip();
         WobblyHeadHomingGunMod.Unequip();
         BananaPeelLauncherMod.Unequip();
+        TornadoGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Portal Gun equipped. Left-click blue, right-click orange, R clears.";
     }

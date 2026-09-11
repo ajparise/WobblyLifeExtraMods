@@ -82,6 +82,7 @@ public sealed class LavaGunMod : BaseMod
         LightningGunMod.Unequip();
         WobblyHeadHomingGunMod.Unequip();
         BananaPeelLauncherMod.Unequip();
+        TornadoGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Lava gun equipped. Close F2, aim, and left-click.";
     }

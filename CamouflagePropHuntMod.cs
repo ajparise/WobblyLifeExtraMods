@@ -113,6 +113,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
         LightningGunMod.Unequip();
         WobblyHeadHomingGunMod.Unequip();
         BananaPeelLauncherMod.Unequip();
+        TornadoGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Camouflage equipped. Aim and press Q; movement locks until you press R to restore.";
     }
