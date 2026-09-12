@@ -18,7 +18,14 @@ internal sealed class RocketWingCarController : MonoBehaviour
     internal static void Attach(GameObject spawned)
     {
         if (!spawned || spawned.GetComponentInChildren<RocketWingCarController>(true)) return;
-        var controller = spawned.AddComponent<RocketWingCarController>();
+        var roadVehicle = spawned.GetComponent<PlayerVehicle>() ?? spawned.GetComponentInChildren<PlayerVehicle>(true);
+        if (!roadVehicle)
+        {
+            VehicleAircraftSpawnerMod.NotifyRocketWingCar("Spawn failed: the selected chassis has no usable vehicle seat.");
+            return;
+        }
+        spawned.name = "Rocket Wing Car";
+        var controller = roadVehicle.gameObject.AddComponent<RocketWingCarController>();
         controller.Initialize();
     }
 
@@ -193,7 +200,8 @@ internal sealed class RocketWingCarController : MonoBehaviour
         var part = GameObject.CreatePrimitive(primitive);
         part.name = name;
         var collider = part.GetComponent<Collider>();
-        if (collider) Object.Destroy(collider);
+        // Remove this synchronously so it never joins the vehicle's compound rigidbody or blocks its seat prompt.
+        if (collider) Object.DestroyImmediate(collider);
         part.transform.SetParent(parent, false);
         part.transform.localPosition = localPosition;
         part.transform.localScale = localScale;

@@ -27,6 +27,7 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
     private const float CrosshairGap = 8f;
     private const float CrosshairLength = 10f;
     private const float CrosshairThickness = 2f;
+    private const string RocketWingCarListName = "★ Rocket Wing Car (Custom)";
 
     private static readonly Ref<string[]> VehicleItems = new(Array.Empty<string>());
     private static readonly Ref<int> VehicleIndex = new();
@@ -137,7 +138,8 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
     [ModAction(ShowInUI = false)]
     public static void SpawnVehicle()
     {
-        SpawnSelected(vehicles, VehicleIndex.Value, VehicleHeight.Value, "vehicle");
+        if (IsRocketWingCarSelected()) SpawnRocketWingCar();
+        else SpawnSelected(vehicles, VehicleSourceIndex(), VehicleHeight.Value, "vehicle");
     }
 
     [ModAction(ShowInUI = false)]
@@ -151,6 +153,7 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
     {
         PlayerPrefs.SetInt(RocketWingCarUnlockKey, 1);
         PlayerPrefs.Save();
+        RefreshCatalog();
         UpdateRocketWingStatus("Unlocked permanently. You can now spawn the Rocket Wing Car.");
     }
 
@@ -264,9 +267,11 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
             .OrderBy(FriendlyName, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
-        VehicleItems.Value = vehicles.Select(FriendlyName).ToArray();
+        VehicleItems.Value = IsRocketWingCarUnlocked()
+            ? new[] { RocketWingCarListName }.Concat(vehicles.Select(FriendlyName)).ToArray()
+            : vehicles.Select(FriendlyName).ToArray();
         AircraftItems.Value = aircraft.Select(FriendlyName).ToArray();
-        VehicleIndex.Value = Mathf.Clamp(VehicleIndex.Value, 0, Math.Max(0, vehicles.Count - 1));
+        VehicleIndex.Value = Mathf.Clamp(VehicleIndex.Value, 0, Math.Max(0, VehicleItems.Value.Length - 1));
         AircraftIndex.Value = Mathf.Clamp(AircraftIndex.Value, 0, Math.Max(0, aircraft.Count - 1));
 
         Status.Value = $"Ready: {vehicles.Count} vehicles and {aircraft.Count} aircraft.";
@@ -274,6 +279,10 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
     }
 
     private static bool IsRocketWingCarUnlocked() => PlayerPrefs.GetInt(RocketWingCarUnlockKey, 0) == 1;
+
+    private static bool IsRocketWingCarSelected() => IsRocketWingCarUnlocked() && VehicleIndex.Value == 0;
+
+    private static int VehicleSourceIndex() => IsRocketWingCarUnlocked() ? VehicleIndex.Value - 1 : VehicleIndex.Value;
 
     private static void UpdateRocketWingStatus(string detail = null)
     {
@@ -405,7 +414,8 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
         switch (gunMode)
         {
             case GunMode.Vehicle:
-                SpawnSelectedAtAim(vehicles, VehicleIndex.Value, VehicleHeight.Value, "vehicle");
+                if (IsRocketWingCarSelected()) SpawnRocketWingCar();
+                else SpawnSelectedAtAim(vehicles, VehicleSourceIndex(), VehicleHeight.Value, "vehicle");
                 break;
             case GunMode.Aircraft:
                 SpawnSelectedAtAim(aircraft, AircraftIndex.Value, AircraftHeight.Value, "aircraft");
