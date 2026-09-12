@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.23.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.24.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -34,6 +34,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Firework Minigun:** an unlimited fully automatic six-barrel launcher whose rockets create native colored firework bursts and launch nearby targets skyward.
 - **Jelly Gun:** marks a movable target and summons a green Jelly Man NPC who chases it down and eats it with native jelly effects.
 - **Temporary Tunnel Drill:** creates timed, illuminated, floor-supported collision corridors that let the local Wobbly walk through mountains and buildings.
+- **Moses Staff:** parts the water into animated walls and creates a temporary dry, illuminated path that is safe to walk across.
 
 ## Requirements
 
@@ -114,6 +115,8 @@ For Jelly Men, open **Extra Mods → Jelly Gun** and choose **Equip Jelly Gun**.
 
 For temporary tunnels, open **Extra Mods → Temporary Tunnel Drill** and choose **Equip tunnel drill**. Close F2, aim directly at a static mountain or building, and left-click. The handheld spinning drill creates a timed collision corridor in the aimed direction, adds a solid floor so terrain tunnels remain walkable, and builds illuminated ribs showing the safe route. Only the local Wobbly's colliders are bypassed while inside the corridor; vehicles, dynamic props, roads outside the narrow tunnel, and the rest of the world retain normal collision. Collision is restored immediately after leaving when the timer expires. If the tunnel is occupied at expiry, removal waits until the player exits; manually clearing an occupied tunnel moves the player to its nearest safe end first. Length, radius, lifetime, range, cooldown, tunnel count, and lighting are adjustable. This is a temporary session-local collision passage rather than permanent terrain-file modification.
 
+For the Moses Staff, open **Extra Mods → Moses Staff** and choose **Equip Moses Staff**. Close F2, face across the water, and left-click. The glowing wooden staff raises two animated translucent water walls, lays down a solid dry sea-floor path, sweeps movable physics objects out of the opening, and prevents the local Wobbly from triggering the water while inside the corridor. The path remains open for the adjustable duration and waits to close while occupied. Press **R** to close all paths safely; an occupied path moves the player to its nearest end before vanishing. Path length, width, water-wall height, force, duration, path count, and lights are adjustable.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -128,4 +131,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.23.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.24.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

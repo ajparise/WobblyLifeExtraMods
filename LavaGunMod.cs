@@ -86,6 +86,7 @@ public sealed class LavaGunMod : BaseMod
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
+        MosesStaffMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Lava gun equipped. Close F2, aim, and left-click.";
     }

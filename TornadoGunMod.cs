@@ -96,6 +96,7 @@ public sealed class TornadoGunMod : BaseMod
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
+        MosesStaffMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Tornado Gun equipped. Close F2 and left-click.";

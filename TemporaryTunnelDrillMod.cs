@@ -94,6 +94,7 @@ public sealed class TemporaryTunnelDrillMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        MosesStaffMod.Unequip();
         EquippedState.Value = true;
         EnsureDrillModel();
         Status.Value = "Tunnel drill equipped. Aim at a mountain or building and left-click.";

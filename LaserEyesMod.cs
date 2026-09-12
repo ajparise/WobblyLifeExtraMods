@@ -84,6 +84,7 @@ public sealed class LaserEyesMod : BaseMod
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
+        MosesStaffMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Laser eyes equipped. Close F2, aim, and press Q to explode the target.";
     }

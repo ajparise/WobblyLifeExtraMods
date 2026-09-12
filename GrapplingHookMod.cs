@@ -86,6 +86,7 @@ public sealed class GrapplingHookMod : BaseMod
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
+        MosesStaffMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Grappling hook equipped. Left-click to attach; right-click to release.";
     }

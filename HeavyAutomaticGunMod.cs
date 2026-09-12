@@ -114,6 +114,7 @@ public sealed class HeavyAutomaticGunMod : BaseMod
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
+        MosesStaffMod.Unequip();
         EquippedState.Value = true;
         rounds = MagazineCapacity;
         reloading = false;
