@@ -82,6 +82,7 @@ public sealed class LaserEyesMod : BaseMod
         BananaPeelLauncherMod.Unequip();
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
+        JellyGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Laser eyes equipped. Close F2, aim, and press Q to explode the target.";
     }

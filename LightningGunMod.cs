@@ -102,6 +102,7 @@ public sealed class LightningGunMod : BaseMod
         BananaPeelLauncherMod.Unequip();
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
+        JellyGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Lightning Gun equipped. Close F2, aim, and left-click.";
     }

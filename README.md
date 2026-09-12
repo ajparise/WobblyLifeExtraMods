@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.21.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.22.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -32,6 +32,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Every Fish Reel:** completes a real fishing catch in one reel with randomized pull power, then records every genuine fish species through the native fishing-mission save system.
 - **Tornado Gun:** launches moving visible tornadoes that pull in, lift, spin, and finally throw Wobblies, vehicles, and movable physics props.
 - **Firework Minigun:** an unlimited fully automatic six-barrel launcher whose rockets create native colored firework bursts and launch nearby targets skyward.
+- **Jelly Gun:** marks a movable target and summons a green Jelly Man NPC who chases it down and eats it with native jelly effects.
 
 ## Requirements
 
@@ -108,6 +109,8 @@ For tornadoes, open **Extra Mods → Tornado Gun** and choose **Equip Tornado Gu
 
 For fireworks, open **Extra Mods → Firework Minigun** and choose **Equip Firework Minigun**. A large six-barrel weapon attaches to the local Wobbly's right hand and spins while firing. Close F2 and hold left-click for fully automatic rockets with unlimited ammunition. Each rocket explodes on impact or after its fuse and randomly loads the game's genuine blue, green, purple, or red `Particles/Fireworks` prefab. The blast ragdolls and launches Wobblies upward while throwing vehicles and movable props into the sky; every rigidbody belonging to the firing player is excluded. Rocket speed, fire interval, fuse, blast radius, launch strength, impact detonation, random colors, and the active-rocket limit are adjustable. Physics effects require an offline game or the lobby host.
 
+For Jelly Men, open **Extra Mods → Jelly Gun** and choose **Equip Jelly Gun**. Close F2, aim at another Wobbly, a vehicle, or a movable physics prop, and left-click. The gun marks the target with a green splash and summons a green jelly-styled native network NPC nearby. The Jelly Man uses NavMesh or obstacle-aware fallback movement to chase moving targets, plays its walking animation, then consumes the target with Wobbly Life's built-in `Main Menu/Eating Jelly.prefab` and green-jelly splash. Buildings, roads, terrain, oversized world mechanisms, and the firing player are protected. Range, chase speed, eating distance/time, fire interval, rapid fire, and the active Jelly Man limit are adjustable. Summoning and target removal require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -122,4 +125,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.21.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.22.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

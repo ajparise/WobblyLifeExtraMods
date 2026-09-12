@@ -100,6 +100,7 @@ public sealed class RocketLauncherMod : BaseMod
         BananaPeelLauncherMod.Unequip();
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
+        JellyGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Rocket prop launcher equipped. Close F2, aim, and hold left-click.";
     }

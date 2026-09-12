@@ -104,6 +104,7 @@ public sealed class FireworkMinigunMod : BaseMod
         WobblyHeadHomingGunMod.Unequip();
         BananaPeelLauncherMod.Unequip();
         TornadoGunMod.Unequip();
+        JellyGunMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Firework Minigun equipped. Ammo: unlimited. Hold left-click.";
