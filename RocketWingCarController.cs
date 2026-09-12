@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using HarmonyLib;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -8,12 +10,15 @@ namespace WobblyLifeExtraMods;
 /// <summary>Adds wings, toggleable boosters, and speed-gated flight to a spawned road vehicle.</summary>
 internal sealed class RocketWingCarController : MonoBehaviour
 {
+    private static readonly System.Reflection.MethodInfo EnterActionMethod =
+        AccessTools.Method(typeof(ActionEnterExitInteract), "EnterAction");
     private readonly List<Transform> flames = new();
     private PlayerVehicle vehicle;
     private Rigidbody body;
     private bool boostersActive;
     private bool flightActive;
     private float flightStartedAt;
+    private float nextInteractionRefresh;
 
     internal static void Attach(GameObject spawned)
     {
@@ -34,6 +39,11 @@ internal sealed class RocketWingCarController : MonoBehaviour
         vehicle = GetComponent<PlayerVehicle>() ?? GetComponentInChildren<PlayerVehicle>(true);
         var movement = vehicle ? vehicle.GetVehicleMovementBase() : null;
         body = movement ? movement.GetRigidbody() : GetComponentInChildren<Rigidbody>();
+        if (vehicle)
+        {
+            vehicle.AddNotAllowedOptimizationHandle(this);
+            KeepDriverSeatEnterable();
+        }
         BuildRocketCarVisuals();
     }
 
@@ -48,6 +58,17 @@ internal sealed class RocketWingCarController : MonoBehaviour
         }
 
         var localDriver = HasLocalDriver();
+        if (!localDriver && Time.unscaledTime >= nextInteractionRefresh)
+        {
+            nextInteractionRefresh = Time.unscaledTime + 0.2f;
+            KeepDriverSeatEnterable();
+        }
+        if (!localDriver && !Cursor.visible && Input.GetKeyDown(KeyCode.F) && IsLocalPlayerNearCar())
+        {
+            // The native prompt can consume F just before a late prefab/network update marks a freshly spawned car
+            // non-interactable. Retry on the next frame after restoring the seat state.
+            StartCoroutine(ForceEnterNextFrame());
+        }
         if (localDriver && !Cursor.visible && Input.GetKeyDown(KeyCode.K))
         {
             boostersActive = !boostersActive;
@@ -121,6 +142,51 @@ internal sealed class RocketWingCarController : MonoBehaviour
         if (!vehicle || !GameInstance.InstanceExists) return false;
         var local = GameInstance.Instance.GetFirstLocalPlayerController();
         return local && vehicle.GetDriverPlayerController() == local;
+    }
+
+    private void KeepDriverSeatEnterable()
+    {
+        if (!vehicle) return;
+        if (!vehicle.IsVehicleEnabled()) vehicle.SetVehicleEnabled(true, true, true);
+        vehicle.SetInteractable(true);
+        var action = vehicle.GetActionEnterExitInteract();
+        if (action) action.SetInteractable(true, true);
+    }
+
+    private bool IsLocalPlayerNearCar()
+    {
+        if (!vehicle || !GameInstance.InstanceExists) return false;
+        var local = GameInstance.Instance.GetFirstLocalPlayerController();
+        var character = local ? local.GetPlayerCharacter() : null;
+        if (!character || local.GetPlayerControllerInteractor()?.GetEnteredAction() != null) return false;
+        var action = vehicle.GetActionEnterExitInteract();
+        var target = action ? action.transform.position : vehicle.transform.position;
+        if ((character.transform.position - target).sqrMagnitude > 64f) return false;
+
+        // Only the nearest Rocket Wing Car handles the fallback when several are parked together.
+        foreach (var other in FindObjectsOfType<RocketWingCarController>())
+        {
+            if (!other || other == this || !other.vehicle) continue;
+            var otherAction = other.vehicle.GetActionEnterExitInteract();
+            var otherTarget = otherAction ? otherAction.transform.position : other.vehicle.transform.position;
+            if ((character.transform.position - otherTarget).sqrMagnitude <
+                (character.transform.position - target).sqrMagnitude) return false;
+        }
+        return true;
+    }
+
+    private IEnumerator ForceEnterNextFrame()
+    {
+        yield return null;
+        if (!vehicle || HasLocalDriver() || !IsLocalPlayerNearCar()) yield break;
+        var local = GameInstance.InstanceExists ? GameInstance.Instance.GetFirstLocalPlayerController() : null;
+        var action = vehicle.GetActionEnterExitInteract();
+        if (!local || !action) yield break;
+        KeepDriverSeatEnterable();
+        if (EnterActionMethod == null) yield break;
+        EnterActionMethod.Invoke(action, new object[] { local, true });
+        VehicleAircraftSpawnerMod.NotifyRocketWingCar("Driver-seat entry restored.");
+        Plugin.Log?.LogInfo("Rocket Wing Car recovered a dropped F-key seat interaction.");
     }
 
     private bool IsGrounded()
@@ -230,5 +296,10 @@ internal sealed class RocketWingCarController : MonoBehaviour
             var pulse = 0.78f + Mathf.Abs(Mathf.Sin(Time.unscaledTime * 18f + i)) * 0.55f;
             flame.localScale = new Vector3(0.22f * pulse, 0.72f * pulse, 0.22f * pulse);
         }
+    }
+
+    private void OnDestroy()
+    {
+        if (vehicle) vehicle.RemoveNotAllowedOptimizationHandle(this);
     }
 }

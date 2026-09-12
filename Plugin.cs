@@ -9,7 +9,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "com.aj.wobblylife.extramods";
     public const string Name = "Wobbly Life Extra Mods";
-    public const string Version = "1.25.1";
+    public const string Version = "1.25.2";
 
     internal static BepInEx.Logging.ManualLogSource Log { get; private set; }
 

@@ -329,7 +329,11 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
         };
         UpdateRocketWingStatus("Spawning...");
         TryNetworkSpawn(PropAddressResolver.Fallbacks(identity).ToList(), 0, position, rotation, identity,
-            "Rocket Wing Car", spawned => RocketWingCarController.Attach(spawned));
+            "Rocket Wing Car", spawned =>
+            {
+                RocketWingCarController.Attach(spawned);
+                Plugin.Log?.LogInfo($"Rocket Wing Car chassis: {FriendlyName(entry)} ({entry.LoadKey}).");
+            });
     }
 
     private static void SpawnByAddress(string address, float height, string label)
