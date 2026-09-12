@@ -183,6 +183,7 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         gunMode = mode;
         EquippedState.Value = true;
         Status.Value = $"{label} gun equipped. Close F2, aim, and hold left-click.";

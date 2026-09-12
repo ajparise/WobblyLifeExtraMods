@@ -116,6 +116,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Camouflage equipped. Aim and press Q; movement locks until you press R to restore.";
     }

@@ -107,6 +107,7 @@ public sealed class WobblyHeadHomingGunMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Wobbly Head Homing Gun equipped. Close F2 and left-click.";

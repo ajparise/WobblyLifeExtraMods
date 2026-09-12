@@ -87,6 +87,7 @@ public sealed class ShrinkRayMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         Status.Value = $"Shrink ray equipped in {ModeName()} mode. Press Q to toggle; right-click restores.";
     }

@@ -80,6 +80,7 @@ public sealed class PortalGunMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Portal Gun equipped. Left-click blue, right-click orange, R clears.";
     }

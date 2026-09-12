@@ -131,6 +131,7 @@ public sealed class MinecraftBuildingMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Building mode equipped. Left place, right mine, middle pick block.";
     }

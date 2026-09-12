@@ -86,6 +86,7 @@ public sealed class WindCannonMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Wind cannon equipped. Close the menu, aim, and left-click to fire.";
     }

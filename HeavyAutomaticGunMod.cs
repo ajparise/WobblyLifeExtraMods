@@ -113,6 +113,7 @@ public sealed class HeavyAutomaticGunMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         rounds = MagazineCapacity;
         reloading = false;

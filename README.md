@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.22.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.23.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -33,6 +33,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Tornado Gun:** launches moving visible tornadoes that pull in, lift, spin, and finally throw Wobblies, vehicles, and movable physics props.
 - **Firework Minigun:** an unlimited fully automatic six-barrel launcher whose rockets create native colored firework bursts and launch nearby targets skyward.
 - **Jelly Gun:** marks a movable target and summons a green Jelly Man NPC who chases it down and eats it with native jelly effects.
+- **Temporary Tunnel Drill:** creates timed, illuminated, floor-supported collision corridors that let the local Wobbly walk through mountains and buildings.
 
 ## Requirements
 
@@ -111,6 +112,8 @@ For fireworks, open **Extra Mods → Firework Minigun** and choose **Equip Firew
 
 For Jelly Men, open **Extra Mods → Jelly Gun** and choose **Equip Jelly Gun**. Close F2, aim at another Wobbly, a vehicle, or a movable physics prop, and left-click. The gun marks the target with a green splash and summons a green jelly-styled native network NPC nearby. The Jelly Man uses NavMesh or obstacle-aware fallback movement to chase moving targets, plays its walking animation, then consumes the target with Wobbly Life's built-in `Main Menu/Eating Jelly.prefab` and green-jelly splash. Buildings, roads, terrain, oversized world mechanisms, and the firing player are protected. Range, chase speed, eating distance/time, fire interval, rapid fire, and the active Jelly Man limit are adjustable. Summoning and target removal require an offline game or the lobby host.
 
+For temporary tunnels, open **Extra Mods → Temporary Tunnel Drill** and choose **Equip tunnel drill**. Close F2, aim directly at a static mountain or building, and left-click. The handheld spinning drill creates a timed collision corridor in the aimed direction, adds a solid floor so terrain tunnels remain walkable, and builds illuminated ribs showing the safe route. Only the local Wobbly's colliders are bypassed while inside the corridor; vehicles, dynamic props, roads outside the narrow tunnel, and the rest of the world retain normal collision. Collision is restored immediately after leaving when the timer expires. If the tunnel is occupied at expiry, removal waits until the player exits; manually clearing an occupied tunnel moves the player to its nearest safe end first. Length, radius, lifetime, range, cooldown, tunnel count, and lighting are adjustable. This is a temporary session-local collision passage rather than permanent terrain-file modification.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -125,4 +128,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.22.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.23.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

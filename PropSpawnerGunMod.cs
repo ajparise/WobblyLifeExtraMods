@@ -107,6 +107,7 @@ public sealed class PropSpawnerGunMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Prop spawner gun equipped. Close the menu, aim, and left-click.";
     }

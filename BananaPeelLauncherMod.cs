@@ -94,6 +94,7 @@ public sealed class BananaPeelLauncherMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Banana Peel Launcher equipped. Ammo: unlimited.";

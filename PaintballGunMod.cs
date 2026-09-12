@@ -114,6 +114,7 @@ public sealed class PaintballGunMod : BaseMod
         TornadoGunMod.Unequip();
         FireworkMinigunMod.Unequip();
         JellyGunMod.Unequip();
+        TemporaryTunnelDrillMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Paintball gun equipped. Close F2, aim, and left-click.";
     }
