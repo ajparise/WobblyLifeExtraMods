@@ -15,6 +15,7 @@ namespace WobblyLifeExtraMods;
 /// <summary>Searchable host-side spawner for drivable vehicles and aircraft.</summary>
 public sealed class VehicleAircraftSpawnerMod : BaseMod
 {
+    private const string RocketWingCarUnlockKey = "WobblyLifeExtraMods.RocketWingCarUnlocked";
     private enum GunMode
     {
         Vehicle,
@@ -32,6 +33,7 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
     private static readonly Ref<string[]> AircraftItems = new(Array.Empty<string>());
     private static readonly Ref<int> AircraftIndex = new();
     private static readonly Ref<string> Status = new("Waiting for the vehicle catalog...");
+    private static readonly Ref<string> RocketWingStatus = new("Rocket Wing Car: locked");
     private static readonly Ref<bool> EquippedState = new();
 
     private static List<AssetDatabase.AssetEntry> vehicles = new();
@@ -68,6 +70,18 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
     [ModSetting(Order = 70, Min = -250f, Max = 250f, Label = "Crosshair vertical offset")]
     public static Ref<float> CrosshairOffsetY = new(35f);
 
+    [ModSetting(Order = 80, Min = 10f, Max = 80f, Label = "Rocket car takeoff speed")]
+    public static Ref<float> RocketTakeoffSpeed = new(28f);
+
+    [ModSetting(Order = 90, Min = 5f, Max = 100f, Label = "Rocket booster power")]
+    public static Ref<float> RocketBoosterPower = new(42f);
+
+    [ModSetting(Order = 100, Min = 2f, Max = 35f, Label = "Rocket car lift power")]
+    public static Ref<float> RocketLiftPower = new(13f);
+
+    [ModSetting(Order = 110, Min = 40f, Max = 250f, Label = "Rocket car maximum speed")]
+    public static Ref<float> RocketMaximumSpeed = new(130f);
+
     protected override void OnStaticInit()
     {
         AssetDatabase.OnReady += RefreshCatalog;
@@ -76,6 +90,7 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
 
     public override Container BuildPanel(string id)
     {
+        UpdateRocketWingStatus();
         return new Container(id,
             new TextWrapped("VehicleSpawnerHelp",
                 "Type inside either list to search. Vehicles are spawned through Wobbly Life's network-prefab system, " +
@@ -88,6 +103,16 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
                 ActionMenu(new Button("Spawn once", SpawnVehicle), nameof(SpawnVehicle)),
                 ActionMenu(new Button("Equip vehicle gun", EquipVehicleGun), nameof(EquipVehicleGun))
             ).WithContentWidth(),
+            new SeparatorText("Rocket Wing Car", "Rocket Wing Car"),
+            new TextWrapped("RocketWingHelp",
+                "Unlock this custom car once, then spawn it here whenever you visit the vehicle-spawner panel. Build road " +
+                "speed to take off. While driving, K toggles the unlimited rocket boosters; Space climbs, Left Control dives, " +
+                "W/S pitch, and A/D turn and roll."),
+            new HStack("RocketWingActions",
+                ActionMenu(new Button("Unlock Rocket Wing Car", UnlockRocketWingCar), nameof(UnlockRocketWingCar)),
+                ActionMenu(new Button("Spawn Rocket Wing Car", SpawnRocketWingCar), nameof(SpawnRocketWingCar))
+            ).WithContentWidth(),
+            new TextWrapped("RocketWingStatus", "").WithText(RocketWingStatus),
             new SeparatorText("Aircraft", "Aircraft"),
             new SearchableCombo("Plane / aircraft", Array.Empty<string>())
                 .WithItems(AircraftItems)
@@ -119,6 +144,40 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
     public static void SpawnAircraft()
     {
         SpawnSelected(aircraft, AircraftIndex.Value, AircraftHeight.Value, "aircraft");
+    }
+
+    [ModAction(ShowInUI = false)]
+    public static void UnlockRocketWingCar()
+    {
+        PlayerPrefs.SetInt(RocketWingCarUnlockKey, 1);
+        PlayerPrefs.Save();
+        UpdateRocketWingStatus("Unlocked permanently. You can now spawn the Rocket Wing Car.");
+    }
+
+    [ModAction(ShowInUI = false)]
+    public static void SpawnRocketWingCar()
+    {
+        if (!IsRocketWingCarUnlocked())
+        {
+            UpdateRocketWingStatus("Locked. Press Unlock Rocket Wing Car first.");
+            return;
+        }
+        if (vehicles.Count == 0)
+        {
+            UpdateRocketWingStatus("Vehicle catalog is not ready yet. Refresh the vehicle lists.");
+            return;
+        }
+
+        var roadCars = vehicles.Where(entry => entry.HasComponent("PlayerVehicleRoad")).ToList();
+        var preferred = (roadCars.Count > 0 ? roadCars : vehicles)
+            .OrderBy(entry => RocketCarPreference(FriendlyName(entry)))
+            .FirstOrDefault();
+        if (preferred == null)
+        {
+            UpdateRocketWingStatus("No road-car prefab was found in this game build.");
+            return;
+        }
+        SpawnRocketWingCar(preferred);
     }
 
     [ModAction(ShowInUI = false, Label = "Spawn UFO")]
@@ -211,6 +270,57 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
         AircraftIndex.Value = Mathf.Clamp(AircraftIndex.Value, 0, Math.Max(0, aircraft.Count - 1));
 
         Status.Value = $"Ready: {vehicles.Count} vehicles and {aircraft.Count} aircraft.";
+        UpdateRocketWingStatus();
+    }
+
+    private static bool IsRocketWingCarUnlocked() => PlayerPrefs.GetInt(RocketWingCarUnlockKey, 0) == 1;
+
+    private static void UpdateRocketWingStatus(string detail = null)
+    {
+        var access = IsRocketWingCarUnlocked() ? "unlocked" : "locked";
+        RocketWingStatus.Value = detail == null ? $"Rocket Wing Car: {access}." : $"Rocket Wing Car: {access}. {detail}";
+    }
+
+    internal static void NotifyRocketWingCar(string detail) => UpdateRocketWingStatus(detail);
+
+    private static int RocketCarPreference(string name)
+    {
+        var value = name.ToLowerInvariant();
+        if (value.Contains("super") || value.Contains("sport")) return 0;
+        if (value.Contains("race") || value.Contains("formula")) return 1;
+        if (value.Contains("car") || value.Contains("road")) return 2;
+        return 3;
+    }
+
+    private static void SpawnRocketWingCar(AssetDatabase.AssetEntry entry)
+    {
+        if (!PropSpawnManager.IsServer)
+        {
+            UpdateRocketWingStatus("Only the lobby host can spawn the custom car.");
+            return;
+        }
+        var camera = Camera.main;
+        if (!camera)
+        {
+            UpdateRocketWingStatus("Enter a save before spawning the custom car.");
+            return;
+        }
+        var flatForward = Vector3.ProjectOnPlane(camera.transform.forward, Vector3.up).normalized;
+        if (flatForward.sqrMagnitude < 0.01f) flatForward = Vector3.forward;
+        var position = camera.transform.position + flatForward * SpawnDistance.Value + Vector3.up * VehicleHeight.Value;
+        var rotation = Quaternion.LookRotation(flatForward, Vector3.up);
+        var identity = new PropIdentity
+        {
+            Kind = PropSourceKind.Addressable,
+            Address = entry.LoadKey,
+            NetworkAssetId = entry.NetworkAssetId,
+            Guid = entry.Guid,
+            AssetName = "Rocket Wing Car",
+            Networked = true
+        };
+        UpdateRocketWingStatus("Spawning...");
+        TryNetworkSpawn(PropAddressResolver.Fallbacks(identity).ToList(), 0, position, rotation, identity,
+            "Rocket Wing Car", spawned => RocketWingCarController.Attach(spawned));
     }
 
     private static void SpawnByAddress(string address, float height, string label)
@@ -420,7 +530,8 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
         Vector3 position,
         Quaternion rotation,
         PropIdentity identity,
-        string label)
+        string label,
+        Action<GameObject> configure = null)
     {
         if (index >= candidates.Count)
         {
@@ -434,12 +545,15 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
             {
                 if (behaviour == null)
                 {
-                    TryNetworkSpawn(candidates, index + 1, position, rotation, identity, label);
+                    TryNetworkSpawn(candidates, index + 1, position, rotation, identity, label, configure);
                     return;
                 }
 
                 PropSpawnManager.Register(behaviour.gameObject, identity, null, null);
+                configure?.Invoke(behaviour.gameObject);
                 Status.Value = $"Spawned {label}.";
+                if (label == "Rocket Wing Car")
+                    UpdateRocketWingStatus("Spawned. Build speed to take off; K toggles the boosters.");
                 Plugin.Log?.LogInfo(Status.Value);
             },
             position: position,

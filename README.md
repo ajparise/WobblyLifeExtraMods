@@ -1,12 +1,12 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.24.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.25.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
 - **Prop Spawner Gun:** an equippable, searchable placement gun that spawns the selected prefab at the crosshair hit point.
 - **Custom Money Bag:** spawns the game's real cashable money-bag prefab with an adjustable value.
-- **Vehicle & Aircraft Spawner:** searchable networked vehicle and aircraft lists, including dedicated UFO and Egg UFO buttons.
+- **Vehicle & Aircraft Spawner:** searchable networked vehicle and aircraft lists, UFOs, and a permanently unlockable Rocket Wing Car with speed-gated flight and toggleable boosters.
 - **Rocket Prop Launcher:** a rapid-fire gun for small searchable props, plus an impact-detonating TNT rocket mode.
 - **Realistic Plane Flight:** full 360-degree backflips, front flips, and directional barrel rolls using normal plane steering.
 - **Paintball Gun:** custom RGB paintballs with optional player aim assist, rapid fire, forced player respawns, and vehicle destruction.
@@ -117,6 +117,8 @@ For temporary tunnels, open **Extra Mods → Temporary Tunnel Drill** and choose
 
 For the Moses Staff, open **Extra Mods → Moses Staff** and choose **Equip Moses Staff**. Close F2, face across the water, and left-click. The glowing wooden staff raises two animated translucent water walls, lays down a solid dry sea-floor path, sweeps movable physics objects out of the opening, and prevents the local Wobbly from triggering the water while inside the corridor. The path remains open for the adjustable duration and waits to close while occupied. Press **R** to close all paths safely; an occupied path moves the player to its nearest end before vanishing. Path length, width, water-wall height, force, duration, path count, and lights are adjustable.
 
+For the Rocket Wing Car, open **Extra Mods → Vehicle & Aircraft Spawner**, press **Unlock Rocket Wing Car** once, then use **Spawn Rocket Wing Car** from that same car-spawner panel. The permanent unlock is stored in the local player preferences. The mod chooses a functional native road-car chassis and adds broad wings, illuminated wing tips, twin rocket engines, and animated blue flames. Accelerate on the road until the adjustable takeoff speed is reached; the wings then generate lift. While driving, press **K** once to turn the unlimited boosters on and press **K** again to turn them off. In flight, **Space** climbs, **Left Control** dives, **W/S** control pitch, and **A/D** turn and roll. Booster power, lift, takeoff speed, and maximum speed are adjustable. Spawning requires an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -131,4 +133,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.24.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.25.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
