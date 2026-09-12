@@ -107,6 +107,7 @@ public sealed class FireworkMinigunMod : BaseMod
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
+        PowerSwordMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Firework Minigun equipped. Ammo: unlimited. Hold left-click.";

@@ -105,6 +105,7 @@ public sealed class LightningGunMod : BaseMod
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
+        PowerSwordMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Lightning Gun equipped. Close F2, aim, and left-click.";
     }

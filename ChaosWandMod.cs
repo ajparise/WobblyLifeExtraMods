@@ -76,6 +76,7 @@ public sealed class ChaosWandMod : BaseMod
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
+        PowerSwordMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Chaos Wand equipped. Close F2, aim, and left-click.";
     }

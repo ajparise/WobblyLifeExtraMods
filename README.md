@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.25.2 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.26.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -35,6 +35,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Jelly Gun:** marks a movable target and summons a green Jelly Man NPC who chases it down and eats it with native jelly effects.
 - **Temporary Tunnel Drill:** creates timed, illuminated, floor-supported collision corridors that let the local Wobbly walk through mountains and buildings.
 - **Moses Staff:** parts the water into animated walls and creates a temporary dry, illuminated path that is safe to walk across.
+- **Power Sword:** an animated glowing melee weapon that knocks back Wobblies and physics props and instantly explodes struck cars.
 
 ## Requirements
 
@@ -119,6 +120,8 @@ For the Moses Staff, open **Extra Mods → Moses Staff** and choose **Equip Mose
 
 For the Rocket Wing Car, open **Extra Mods → Vehicle & Aircraft Spawner** and press **Unlock Rocket Wing Car** once. It then appears as **★ Rocket Wing Car (Custom)** at the top of the normal searchable vehicle list, so selecting it and pressing **Spawn once** works like the other cars; the dedicated **Spawn Rocket Wing Car** button also remains available. The permanent unlock is stored in the local player preferences. The mod chooses a functional native road-car chassis and adds broad wings, illuminated wing tips, twin rocket engines, and animated blue flames without adding anything to the chassis physics. A seat guard keeps freshly network-spawned cars enabled, interactable, and exempt from distance optimization; if a late network update consumes the first **F** input, the mod retries the driver-seat entry on the next frame. Accelerate on the road until the adjustable takeoff speed is reached; the wings then generate lift. While driving, press **K** once to turn the unlimited boosters on and press **K** again to turn them off. In flight, **Space** climbs, **Left Control** dives, **W/S** control pitch, and **A/D** turn and roll. Booster power, lift, takeoff speed, and maximum speed are adjustable. Spawning requires an offline game or the lobby host.
 
+For the Power Sword, open **Extra Mods → Power Sword** and choose **Equip Power Sword**. Close F2 and left-click to play a full horizontal swing. Wobblies in the short strike capsule are ragdolled and launched, while cars explode immediately and are removed directly without producing a rusty wreck. Other movable rigidbodies receive mass-independent knockback and spin. Reach, swing width, knockback, cooldown, explosion radius, and RGB blade color are adjustable. Sword physics and vehicle destruction require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -133,4 +136,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.25.2 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.26.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
