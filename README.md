@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.26.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.27.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -36,6 +36,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Temporary Tunnel Drill:** creates timed, illuminated, floor-supported collision corridors that let the local Wobbly walk through mountains and buildings.
 - **Moses Staff:** parts the water into animated walls and creates a temporary dry, illuminated path that is safe to walk across.
 - **Power Sword:** an animated glowing melee weapon that knocks back Wobblies and physics props and instantly explodes struck cars.
+- **Bubble Blaster:** traps Wobblies, cars, and movable props inside floating bubbles that bob upward and pop-launch their targets.
 
 ## Requirements
 
@@ -122,6 +123,8 @@ For the Rocket Wing Car, open **Extra Mods → Vehicle & Aircraft Spawner** and 
 
 For the Power Sword, open **Extra Mods → Power Sword** and choose **Equip Power Sword**. Close F2 and left-click to play a full horizontal swing. Wobblies in the short strike capsule are ragdolled and launched, while cars explode immediately and are removed directly without producing a rusty wreck. Other movable rigidbodies receive mass-independent knockback and spin. Reach, swing width, knockback, cooldown, explosion radius, and RGB blade color are adjustable. Sword physics and vehicle destruction require an offline game or the lobby host.
 
+For the Bubble Blaster, open **Extra Mods → Bubble Blaster** and choose **Equip Bubble Blaster**. Close F2 and left-click to fire a shimmering physics projectile, or enable **Rapid fire** to hold the trigger. A hit Wobbly, car, or movable prop is wrapped in a translucent bubble sized to the whole target. Its original gravity and drag are saved while the bubble gently lifts and bobs it; when the timer expires, those physics settings are restored and the target is launched upward. Shooting an already trapped target refreshes its timer. Press **Pop all bubbles** to release everything early. Shot speed, bubble lifetime, floating height, launch power, fire interval, rapid fire, and active-bubble limit are adjustable. The firing player is protected, and physics effects require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -136,4 +139,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.26.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.27.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

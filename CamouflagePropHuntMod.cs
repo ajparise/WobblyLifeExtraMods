@@ -119,6 +119,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
+        BubbleBlasterMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Camouflage equipped. Aim and press Q; movement locks until you press R to restore.";
     }

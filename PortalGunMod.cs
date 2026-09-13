@@ -83,6 +83,7 @@ public sealed class PortalGunMod : BaseMod
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
+        BubbleBlasterMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Portal Gun equipped. Left-click blue, right-click orange, R clears.";
     }

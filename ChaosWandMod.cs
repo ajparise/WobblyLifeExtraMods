@@ -77,6 +77,7 @@ public sealed class ChaosWandMod : BaseMod
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
+        BubbleBlasterMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Chaos Wand equipped. Close F2, aim, and left-click.";
     }

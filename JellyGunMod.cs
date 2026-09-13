@@ -110,6 +110,7 @@ public sealed class JellyGunMod : BaseMod
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
+        BubbleBlasterMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Jelly Gun equipped. Aim at something movable and left-click.";

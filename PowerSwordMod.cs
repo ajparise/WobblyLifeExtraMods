@@ -92,6 +92,7 @@ public sealed class PowerSwordMod : BaseMod
         JellyGunMod.Unequip();
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
+        BubbleBlasterMod.Unequip();
         EquippedState.Value = true;
         EnsureSwordModel();
         Status.Value = "Power Sword equipped. Close F2 and left-click to swing.";
