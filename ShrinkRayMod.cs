@@ -91,6 +91,7 @@ public sealed class ShrinkRayMod : BaseMod
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
+        TsunamiGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = $"Shrink ray equipped in {ModeName()} mode. Press Q to toggle; right-click restores.";
     }

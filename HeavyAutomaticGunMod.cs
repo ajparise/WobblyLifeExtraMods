@@ -117,6 +117,7 @@ public sealed class HeavyAutomaticGunMod : BaseMod
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
+        TsunamiGunMod.Unequip();
         EquippedState.Value = true;
         rounds = MagazineCapacity;
         reloading = false;

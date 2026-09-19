@@ -99,6 +99,7 @@ public sealed class TornadoGunMod : BaseMod
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
+        TsunamiGunMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Tornado Gun equipped. Close F2 and left-click.";

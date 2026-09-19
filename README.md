@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.27.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.28.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -37,6 +37,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Moses Staff:** parts the water into animated walls and creates a temporary dry, illuminated path that is safe to walk across.
 - **Power Sword:** an animated glowing melee weapon that knocks back Wobblies and physics props and instantly explodes struck cars.
 - **Bubble Blaster:** traps Wobblies, cars, and movable props inside floating bubbles that bob upward and pop-launch their targets.
+- **Tsunami Gun:** rapid-fires enormous moving walls of water that sweep Wobblies, vehicles, and movable physics props away.
 
 ## Requirements
 
@@ -125,6 +126,8 @@ For the Power Sword, open **Extra Mods → Power Sword** and choose **Equip Powe
 
 For the Bubble Blaster, open **Extra Mods → Bubble Blaster** and choose **Equip Bubble Blaster**. Close F2 and left-click to fire a shimmering physics projectile, or enable **Rapid fire** to hold the trigger. A hit Wobbly, car, or movable prop is wrapped in a translucent bubble sized to the whole target. Its original gravity and drag are saved while the bubble gently lifts and bobs it; when the timer expires, those physics settings are restored and the target is launched upward. Shooting an already trapped target refreshes its timer. Press **Pop all bubbles** to release everything early. Shot speed, bubble lifetime, floating height, launch power, fire interval, rapid fire, and active-bubble limit are adjustable. The firing player is protected, and physics effects require an offline game or the lobby host.
 
+For the Tsunami Gun, open **Extra Mods → Tsunami Gun** and choose **Equip Tsunami Gun**. Close F2 and hold left-click to rapid-fire huge translucent water walls with animated white foam crests. Each wave follows the ground, passes through static scenery, and sweeps each Wobbly, car, or movable rigidbody it meets forward and upward once. The firing Wobbly is excluded. Wave width, height, thickness, travel speed, force, range, fire interval, rapid fire, and active-wave limit are adjustable. Use **Clear waves** to remove them immediately. Tsunami physics require an offline game or the lobby host.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -139,4 +142,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.27.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.28.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

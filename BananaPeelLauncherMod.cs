@@ -98,6 +98,7 @@ public sealed class BananaPeelLauncherMod : BaseMod
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
+        TsunamiGunMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Banana Peel Launcher equipped. Ammo: unlimited.";

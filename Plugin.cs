@@ -9,7 +9,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "com.aj.wobblylife.extramods";
     public const string Name = "Wobbly Life Extra Mods";
-    public const string Version = "1.27.0";
+    public const string Version = "1.28.0";
 
     internal static BepInEx.Logging.ManualLogSource Log { get; private set; }
 
@@ -46,6 +46,7 @@ public sealed class Plugin : BaseUnityPlugin
         MosesStaffMod.DrawCrosshair();
         PowerSwordMod.DrawCrosshair();
         BubbleBlasterMod.DrawCrosshair();
+        TsunamiGunMod.DrawCrosshair();
     }
 
     internal static UnityEngine.Coroutine RunCoroutine(System.Collections.IEnumerator routine)

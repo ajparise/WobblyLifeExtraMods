@@ -89,6 +89,7 @@ public sealed class GrapplingHookMod : BaseMod
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
+        TsunamiGunMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Grappling hook equipped. Left-click to attach; right-click to release.";
     }

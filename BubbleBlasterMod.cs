@@ -93,6 +93,7 @@ public sealed class BubbleBlasterMod : BaseMod
         TemporaryTunnelDrillMod.Unequip();
         MosesStaffMod.Unequip();
         PowerSwordMod.Unequip();
+        TsunamiGunMod.Unequip();
         EquippedState.Value = true;
         EnsureBlasterModel();
         Status.Value = "Bubble Blaster equipped. Close F2 and left-click to fire.";
