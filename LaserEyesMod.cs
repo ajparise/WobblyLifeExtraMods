@@ -88,6 +88,7 @@ public sealed class LaserEyesMod : BaseMod
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
         TsunamiGunMod.Unequip();
+        MeteorShowerCannonMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Laser eyes equipped. Close F2, aim, and press Q to explode the target.";
     }

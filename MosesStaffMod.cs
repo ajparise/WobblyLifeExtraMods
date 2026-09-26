@@ -90,6 +90,7 @@ public sealed class MosesStaffMod : BaseMod
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
         TsunamiGunMod.Unequip();
+        MeteorShowerCannonMod.Unequip();
         EquippedState.Value = true;
         EnsureStaffModel();
         Status.Value = "Moses Staff equipped. Face across the water and left-click.";

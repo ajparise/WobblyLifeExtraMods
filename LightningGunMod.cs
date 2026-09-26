@@ -108,6 +108,7 @@ public sealed class LightningGunMod : BaseMod
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
         TsunamiGunMod.Unequip();
+        MeteorShowerCannonMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Lightning Gun equipped. Close F2, aim, and left-click.";
     }

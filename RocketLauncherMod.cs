@@ -106,6 +106,7 @@ public sealed class RocketLauncherMod : BaseMod
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
         TsunamiGunMod.Unequip();
+        MeteorShowerCannonMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Rocket prop launcher equipped. Close F2, aim, and hold left-click.";
     }

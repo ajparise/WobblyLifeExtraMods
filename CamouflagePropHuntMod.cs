@@ -121,6 +121,7 @@ public sealed class CamouflagePropHuntMod : BaseMod
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
         TsunamiGunMod.Unequip();
+        MeteorShowerCannonMod.Unequip();
         EquippedState.Value = true;
         Status.Value = "Camouflage equipped. Aim and press Q; movement locks until you press R to restore.";
     }

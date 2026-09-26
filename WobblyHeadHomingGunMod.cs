@@ -112,6 +112,7 @@ public sealed class WobblyHeadHomingGunMod : BaseMod
         PowerSwordMod.Unequip();
         BubbleBlasterMod.Unequip();
         TsunamiGunMod.Unequip();
+        MeteorShowerCannonMod.Unequip();
         EquippedState.Value = true;
         EnsureGunModel();
         Status.Value = "Wobbly Head Homing Gun equipped. Close F2 and left-click.";
