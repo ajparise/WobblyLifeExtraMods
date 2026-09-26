@@ -67,12 +67,12 @@ public sealed class WobblyTubeMod : BaseMod
         "Create a channel, record up to five minutes, name videos, and edit a range into a cut or timelapse.";
     public override ModsWindow ModsWindow => lstwoMODS_WobblyLife.Plugin.ExtraModsWindow;
 
-    [ModSetting(Order = 10, Min = 5f, Max = 20f, Label = "Recording frames per second")]
-    public static Ref<int> CaptureFramesPerSecond = new(10);
-    [ModSetting(Order = 20, Min = 480f, Max = 1280f, Label = "Recording width")]
-    public static Ref<int> CaptureWidth = new(854);
-    [ModSetting(Order = 30, Min = 35f, Max = 90f, Label = "Video picture quality")]
-    public static Ref<int> PictureQuality = new(68);
+    [ModSetting(Order = 10, Min = 5f, Max = 30f, Label = "Recording frames per second")]
+    public static Ref<int> CaptureFramesPerSecond = new(20);
+    [ModSetting(Order = 20, Min = 480f, Max = 1920f, Label = "Recording width")]
+    public static Ref<int> CaptureWidth = new(1280);
+    [ModSetting(Order = 30, Min = 35f, Max = 95f, Label = "Video picture quality")]
+    public static Ref<int> PictureQuality = new(88);
     [ModSetting(Order = 40, Min = 2f, Max = 10f, Label = "Timelapse speed")]
     public static Ref<int> TimelapseSpeed = new(4);
 
@@ -84,7 +84,8 @@ public sealed class WobblyTubeMod : BaseMod
                 "Open WobblyTube Studio, create and name a channel, then name a video and press the red record button. " +
                 "Recordings stop automatically at five minutes. F7 opens the studio and F8 starts or stops recording. " +
                 "Select a recorded project to remove a chosen time range or turn that range into a timelapse, then export " +
-                "it as an AVI video. Originals stay editable. The built-in recorder captures video pictures without game audio."),
+                "it as an AVI video. HD and Full HD presets are available in Studio. Originals stay editable. The built-in " +
+                "recorder captures video pictures without game audio."),
             base.BuildPanel(id),
             new HStack("WobblyTubeActions",
                 ActionMenu(new Button("Open WobblyTube Studio", OpenStudio), nameof(OpenStudio)),
@@ -252,10 +253,17 @@ public sealed class WobblyTubeMod : BaseMod
         GUI.backgroundColor = oldBackground;
 
         GUILayout.BeginHorizontal();
-        GUILayout.Label($"Maximum 05:00  •  {Mathf.Clamp(CaptureFramesPerSecond.Value, 5, 20)} FPS  •  " +
-                        $"{Mathf.Clamp(CaptureWidth.Value, 480, 1280)} px wide");
+        GUILayout.Label("QUALITY PRESET", GUILayout.Width(112f));
+        if (GUILayout.Button("HD 720p • 20 FPS", GUILayout.Height(30f))) ApplyHdPreset();
+        if (GUILayout.Button("FULL HD 1080p • 15 FPS", GUILayout.Height(30f))) ApplyFullHdPreset();
+        GUILayout.EndHorizontal();
+        GUILayout.BeginHorizontal();
+        GUILayout.Label($"Maximum 05:00  •  {Mathf.Clamp(CaptureFramesPerSecond.Value, 5, 30)} FPS  •  " +
+                        $"{Mathf.Clamp(CaptureWidth.Value, 480, 1920)} px wide  •  " +
+                        $"quality {Mathf.Clamp(PictureQuality.Value, 35, 95)}");
         if (GUILayout.Button("Open videos folder", GUILayout.Width(145f))) OpenVideosFolder();
         GUILayout.EndHorizontal();
+        GUILayout.Label("Full HD produces much larger raw project folders. Use HD if recording causes stutter.");
         GUILayout.Space(12f);
         GUILayout.Label("RECORDED PROJECTS", SectionLabel());
         if (Projects.Count == 0)
@@ -350,6 +358,22 @@ public sealed class WobblyTubeMod : BaseMod
         Status.Value = $"Channel renamed to {channelName}.";
     }
 
+    private static void ApplyHdPreset()
+    {
+        CaptureWidth.Value = 1280;
+        CaptureFramesPerSecond.Value = 20;
+        PictureQuality.Value = 88;
+        Status.Value = "HD preset selected: 1280-pixel width, 20 FPS, quality 88.";
+    }
+
+    private static void ApplyFullHdPreset()
+    {
+        CaptureWidth.Value = 1920;
+        CaptureFramesPerSecond.Value = 15;
+        PictureQuality.Value = 92;
+        Status.Value = "Full HD preset selected: 1920-pixel width, 15 FPS, quality 92.";
+    }
+
     private static void StartRecording()
     {
         EnsureInitialized();
@@ -362,11 +386,11 @@ public sealed class WobblyTubeMod : BaseMod
         }
         currentVideoTitle = CleanDisplayName(videoNameDraft, $"Wobbly Video {DateTime.Now:HH-mm-ss}", 64);
         videoNameDraft = currentVideoTitle;
-        currentFps = Mathf.Clamp(CaptureFramesPerSecond.Value, 5, 20);
-        currentWidth = MakeEven(Mathf.Clamp(CaptureWidth.Value, 480, 1280));
+        currentFps = Mathf.Clamp(CaptureFramesPerSecond.Value, 5, 30);
+        currentWidth = MakeEven(Mathf.Clamp(CaptureWidth.Value, 480, 1920));
         var aspect = Screen.width > 0 && Screen.height > 0 ? (float)Screen.height / Screen.width : 9f / 16f;
         currentHeight = MakeEven(Mathf.Max(270, Mathf.RoundToInt(currentWidth * aspect)));
-        currentJpegQuality = Mathf.Clamp(PictureQuality.Value, 35, 90);
+        currentJpegQuality = Mathf.Clamp(PictureQuality.Value, 35, 95);
         currentProjectDirectory = Path.Combine(projectsDirectory, DateTime.Now.ToString("yyyyMMdd_HHmmss_fff"));
         Directory.CreateDirectory(currentProjectDirectory);
         while (FrameQueue.TryDequeue(out _)) { }
@@ -591,11 +615,23 @@ public sealed class WobblyTubeMod : BaseMod
         videosDirectory = Path.Combine(rootDirectory, "Videos");
         Directory.CreateDirectory(projectsDirectory);
         Directory.CreateDirectory(videosDirectory);
+        UpgradeOldQualityDefaults();
         var channelPath = Path.Combine(rootDirectory, "channel.txt");
         if (File.Exists(channelPath)) channelName = ReadEncodedText(channelPath);
         channelDraft = string.IsNullOrWhiteSpace(channelName) ? "My Wobbly Channel" : channelName;
         ReloadProjects();
         initialized = true;
+    }
+
+    private static void UpgradeOldQualityDefaults()
+    {
+        var marker = Path.Combine(rootDirectory, "high_quality_defaults_v1.txt");
+        if (File.Exists(marker)) return;
+        if (CaptureFramesPerSecond.Value <= 10) CaptureFramesPerSecond.Value = 20;
+        if (CaptureWidth.Value <= 854) CaptureWidth.Value = 1280;
+        if (PictureQuality.Value <= 68) PictureQuality.Value = 88;
+        File.WriteAllText(marker,
+            "WobblyTube upgraded its original recording defaults to the balanced HD quality preset.");
     }
 
     private static void ReloadProjects()

@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.30.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.30.1 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -132,7 +132,7 @@ For the Tsunami Gun, open **Extra Mods → Tsunami Gun** and choose **Equip Tsun
 
 For the Meteor Shower Cannon, open **Extra Mods → Meteor Shower Cannon** and choose **Equip Meteor Cannon**. Close F2, aim at the ground, and left-click to mark a storm center. Glowing meteors fall across the adjustable radius, leave fiery trails, and explode on impact; each blast ragdolls Wobblies and launches cars and movable props while protecting the firing player. Meteor count, storm radius, spawn height, speed, blast radius, force, interval, cooldown, and active-storm limit are adjustable. Use **Clear storms** to cancel them. Physics requires offline play or the lobby host.
 
-For WobblyTube, open **Extra Mods → WobblyTube** and choose **Open WobblyTube Studio**. Create and name a channel, enter a video name, and press the red **RECORD** button. Recording stops automatically after five minutes; **F7** opens or hides Studio and **F8** starts or stops recording. Select a raw project, enter a start and end time, choose whether to remove that range or make it a timelapse, and export a standard MJPEG AVI file. Original frames stay editable until you delete the raw project. Capture FPS, width, picture quality, and timelapse speed are adjustable. The built-in recorder captures video pictures without game audio.
+For WobblyTube, open **Extra Mods → WobblyTube** and choose **Open WobblyTube Studio**. Create and name a channel, enter a video name, and press the red **RECORD** button. Recording stops automatically after five minutes; **F7** opens or hides Studio and **F8** starts or stops recording. Select a raw project, enter a start and end time, choose whether to remove that range or make it a timelapse, and export a standard MJPEG AVI file. Original frames stay editable until you delete the raw project. Capture FPS, width, picture quality, and timelapse speed are adjustable. The built-in recorder captures video pictures without game audio. The balanced HD preset records at 1280-pixel width, 20 FPS, and quality 88; the Full HD preset records at 1920-pixel width, 15 FPS, and quality 92. Full HD uses considerably more disk space.
 
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
@@ -148,4 +148,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.30.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.30.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
