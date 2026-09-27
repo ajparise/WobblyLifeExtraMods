@@ -42,6 +42,7 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
     private static float resultEndsAt;
     private static float roleRevealEndsAt;
     private static float timesUpMessageEndsAt;
+    private static float tagsEnabledAt;
     private static string seekerOriginalName = "";
     private static bool ownsSeekerMarker;
     private static string resultText = "";
@@ -221,7 +222,13 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
         }
 
         PruneDisconnectedHiders();
-        CheckForTags(seekerCharacter);
+        if (Hiders.Count == 0)
+        {
+            Status.Value = "Hide & Seek stopped because every hider left the world.";
+            StopRoundInternal(false);
+            return;
+        }
+        if (Time.unscaledTime >= tagsEnabledAt) CheckForTags(seekerCharacter);
         if (RemainingHiders == 0)
         {
             FinishRound("SEEKER WINS!", "The seeker found every hider.", true);
@@ -327,6 +334,7 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
         phase = RoundPhase.Seeking;
         phaseEndsAt = Time.unscaledTime + Mathf.Clamp(SeekingTime.Value, 60f, 900f);
         timesUpMessageEndsAt = Time.unscaledTime + 3.5f;
+        tagsEnabledAt = timesUpMessageEndsAt;
         Status.Value = $"Seeking started. Find {RemainingHiders} hider{Plural(RemainingHiders)} within " +
                        $"{FormatTime(SecondsRemaining)}.";
         Plugin.Log?.LogInfo("Hide & Seek seeking phase started.");
@@ -396,7 +404,8 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
     private static Vector3 PlayerPosition(PlayerController player, Vector3 fallback)
     {
         var entered = player?.GetPlayerControllerInteractor()?.GetEnteredAction()?.GetGameObject();
-        return entered ? entered.transform.position : fallback;
+        var vehicle = entered ? entered.GetComponentInParent<PlayerVehicle>() : null;
+        return vehicle ? vehicle.transform.position : fallback;
     }
 
     private static void PruneDisconnectedHiders()
@@ -467,6 +476,7 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
         resultText = "";
         lastFoundText = "";
         timesUpMessageEndsAt = 0f;
+        tagsEnabledAt = 0f;
         phase = RoundPhase.Idle;
         if (announce) Status.Value = "Hide & Seek round stopped and player settings restored.";
     }
