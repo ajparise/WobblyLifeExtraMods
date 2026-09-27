@@ -511,6 +511,9 @@ public sealed class CommandChatMod : BaseMod
         Register("enable crazy cars", "systems", "enabled crazy car upgrades", PowerClothesCrazyCarsMod.EnableCars);
         Register("disable crazy cars", "systems", "disabled crazy car upgrades", PowerClothesCrazyCarsMod.DisableCars);
         Register("fire car missile", "powers", "fired the crazy car missile", PowerClothesCrazyCarsMod.FireMissile);
+        Register("start hide and seek", "systems", "started a free-roam Hide & Seek round", FreeRoamHideAndSeekMod.StartRound);
+        Register("start hide seek", "systems", "started a free-roam Hide & Seek round", FreeRoamHideAndSeekMod.StartRound);
+        Register("stop hide and seek", "systems", "stopped the Hide & Seek round", FreeRoamHideAndSeekMod.StopRound);
 
         Register("spawn wobbly jet", "spawning", "spawned the Wobbly Jet", BuildingJetSpawnerMod.SpawnWobblyJet);
         Register("spawn super fast jet", "spawning", "spawned the Super Fast Jet", BuildingJetSpawnerMod.SpawnSuperFastJet);
