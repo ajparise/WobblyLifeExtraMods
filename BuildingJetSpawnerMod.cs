@@ -546,9 +546,11 @@ public sealed class BuildingJetSpawnerMod : BaseMod
     }
 }
 
+[DefaultExecutionOrder(32000)]
 internal sealed class SuperFastJetController : MonoBehaviour
 {
     private PlayerPlane plane;
+    private PlayerPlaneMovement movement;
     private Rigidbody body;
 
     internal static void Attach(GameObject spawned)
@@ -565,16 +567,37 @@ internal sealed class SuperFastJetController : MonoBehaviour
         spawned.name = "Super Fast Jet";
         var controller = spawned.AddComponent<SuperFastJetController>();
         controller.plane = targetPlane;
-        controller.ResolveBody();
+        controller.ResolveMovement();
+        if (!controller.movement)
+            Plugin.Log?.LogWarning("Super Fast Jet could not find its PlayerPlaneMovement component.");
+        else
+            Plugin.Log?.LogInfo(
+                $"Super Fast Jet native limits set to {BuildingJetSpawnerMod.SuperJetMaximumSpeed.Value:0} speed " +
+                $"and {BuildingJetSpawnerMod.SuperJetAcceleration.Value:0} acceleration.");
     }
 
-    private void ResolveBody()
+    private void ResolveMovement()
     {
         if (!plane) return;
-        var movement = plane.GetVehicleMovementBase();
-        body = movement ? movement.GetRigidbody() : null;
+        movement = plane.GetComponent<PlayerPlaneMovement>() ??
+                   plane.GetComponentInChildren<PlayerPlaneMovement>(true);
+        var vehicleMovement = plane.GetVehicleMovementBase();
+        if (!movement) movement = vehicleMovement as PlayerPlaneMovement;
+        ApplyNativePerformance();
+        var source = movement ? movement : vehicleMovement;
+        body = source ? source.GetRigidbody() : null;
         if (!body) body = plane.GetComponent<Rigidbody>();
         if (!body) body = plane.GetComponentInChildren<Rigidbody>(true);
+    }
+
+    private void ApplyNativePerformance(float multiplier = 1f)
+    {
+        if (!movement) return;
+        var maximumSpeed = Mathf.Clamp(BuildingJetSpawnerMod.SuperJetMaximumSpeed.Value, 100f, 800f);
+        var acceleration = Mathf.Clamp(BuildingJetSpawnerMod.SuperJetAcceleration.Value, 25f, 500f) *
+                           Mathf.Clamp(multiplier, 1f, 5f);
+        movement.SetForwardMaxSpeed(maximumSpeed);
+        movement.SetAccerationSpeed(acceleration);
     }
 
     private void FixedUpdate()
@@ -584,9 +607,9 @@ internal sealed class SuperFastJetController : MonoBehaviour
             Destroy(this);
             return;
         }
-        if (!body)
+        if (!movement || !body)
         {
-            ResolveBody();
+            ResolveMovement();
             if (!body) return;
         }
 
@@ -594,16 +617,21 @@ internal sealed class SuperFastJetController : MonoBehaviour
         if (!driver || !driver.IsLocal()) return;
 
         var maximumSpeed = Mathf.Clamp(BuildingJetSpawnerMod.SuperJetMaximumSpeed.Value, 100f, 800f);
+        var boostMultiplier = Input.GetKey(KeyCode.LeftShift)
+            ? Mathf.Clamp(BuildingJetSpawnerMod.SuperJetBoostMultiplier.Value, 1f, 5f)
+            : 1f;
+        ApplyNativePerformance(boostMultiplier);
+
         if (Input.GetKey(KeyCode.W))
         {
-            var multiplier = Input.GetKey(KeyCode.LeftShift)
-                ? Mathf.Clamp(BuildingJetSpawnerMod.SuperJetBoostMultiplier.Value, 1f, 5f)
-                : 1f;
-            var forwardSpeed = Vector3.Dot(body.velocity, plane.transform.forward);
+            var forward = movement ? movement.transform.forward : plane.transform.forward;
+            var forwardSpeed = Vector3.Dot(body.velocity, forward);
             if (forwardSpeed < maximumSpeed)
-                body.AddForce(plane.transform.forward *
-                              Mathf.Clamp(BuildingJetSpawnerMod.SuperJetAcceleration.Value, 25f, 500f) * multiplier,
-                    ForceMode.Acceleration);
+            {
+                var acceleration = Mathf.Clamp(BuildingJetSpawnerMod.SuperJetAcceleration.Value, 25f, 500f) *
+                                   boostMultiplier;
+                body.AddForce(forward * acceleration * Time.fixedDeltaTime, ForceMode.VelocityChange);
+            }
         }
 
         if (body.velocity.sqrMagnitude > maximumSpeed * maximumSpeed)
