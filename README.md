@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.31.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.32.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -41,6 +41,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Meteor Shower Cannon:** targets an area and rains glowing explosive meteors that ragdoll and launch nearby physics targets.
 - **WobblyTube:** creates a named in-game channel with five-minute screen recording, video naming, and cut or timelapse editing.
 - **Building & Wobbly Jet Spawner:** searches and places ground-aligned buildings, spawns functional aircraft, and provides a quick Wobbly Jet button.
+- **Host Command Chat:** opens a local host-only command window with natural money and speed requests plus more than 200 weapon, spawning, cleanup, power, and system command phrases.
 
 ## Requirements
 
@@ -137,6 +138,8 @@ For WobblyTube, open **Extra Mods → WobblyTube** and choose **Open WobblyTube 
 
 For the Building & Wobbly Jet Spawner, open **Extra Mods → Building & Wobbly Jet Spawner**. Search the building list and press **Spawn building** to place it on the ground in front of the camera. Rotation, distance, height, ground alignment, and frozen physics are adjustable; use the undo and clear buttons to remove spawned scenery. Enable **Show full prefab catalog** and refresh when a building is not detected by the filtered list. Search the aircraft list to spawn any functional aircraft, or press **Spawn Wobbly Jet** for the best genuine jet match. Aircraft require offline play or the lobby host.
 
+For Host Command Chat, open **Extra Mods → Host Command Chat** and press **Open Command Chat**, or press **F9**. This is a local command console rather than player chat, and commands run only for the offline player or lobby host. It understands natural requests including **make my speed 50**, **can I have 1000 dollars**, **set my balance to 5000**, and **car speed 100**. Money is credited through the game save and UI system. More than 200 command phrases control Extra Mods weapons, spawning, cleanup, NPCs, police, driving, recording, powers, gravity, time scale, and movement. Type **help**, **help 2**, **help guns**, **help spawning**, or **help systems** in the window.
+
 Start in an offline or private host-controlled game. Local spawning is the safer default. Network spawning is rejected for catalog entries that lstwoMODS did not identify as network prefabs.
 
 ## Build from source
@@ -151,4 +154,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.31.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.32.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
