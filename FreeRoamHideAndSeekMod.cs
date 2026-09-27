@@ -31,6 +31,7 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
     private static readonly List<PlayerController> Hiders = new();
     private static readonly HashSet<PlayerController> FoundHiders = new();
     private static readonly Dictionary<PlayerCharacter, bool> PreviousNameVisibility = new();
+    private static readonly Dictionary<GameObject, bool> HiddenNavigationObjects = new();
 
     private static RoundPhase phase;
     private static PlayerController seeker;
@@ -40,6 +41,7 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
     private static float phaseEndsAt;
     private static float resultEndsAt;
     private static float roleRevealEndsAt;
+    private static float timesUpMessageEndsAt;
     private static string seekerOriginalName = "";
     private static bool ownsSeekerMarker;
     private static string resultText = "";
@@ -149,9 +151,11 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
         phase = RoundPhase.Hiding;
         phaseEndsAt = Time.unscaledTime + Mathf.Clamp(HidingTime.Value, 15f, 180f);
         roleRevealEndsAt = Time.unscaledTime + 4.5f;
+        timesUpMessageEndsAt = 0f;
         resultText = "";
         lastFoundText = "";
         missingSeekerSince = -1f;
+        HideRoundNavigationUi();
         FreezeSeeker();
         var localRole = IsLocalPlayer(seeker) ? "SEEKER" : "HIDER";
         Status.Value = $"Your role is {localRole}. {Hiders.Count} hider{Plural(Hiders.Count)} have " +
@@ -183,6 +187,7 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
             return;
         }
         if (phase == RoundPhase.Finished) return;
+        HideRoundNavigationUi();
         if (!GameInstance.InstanceExists)
         {
             StopRoundInternal(false);
@@ -302,6 +307,16 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
             20, Color.white);
         if (Time.unscaledTime < lastFoundTextEndsAt)
             DrawCenteredText(rect.y + 79f, lastFoundText, 17, new Color(0.45f, 1f, 0.55f));
+
+        if (phase == RoundPhase.Seeking && Time.unscaledTime < timesUpMessageEndsAt)
+        {
+            var alertRect = new Rect((Screen.width - 560f) * 0.5f, Screen.height * 0.38f, 560f, 110f);
+            oldColor = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.92f);
+            GUI.DrawTexture(alertRect, Texture2D.whiteTexture);
+            GUI.color = oldColor;
+            DrawCenteredText(alertRect.y + 22f, "TIME'S UP!", 54, new Color(1f, 0.3f, 0.15f));
+        }
     }
 
     internal static void Shutdown() => StopRoundInternal(false);
@@ -311,6 +326,7 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
         ReleaseSeeker();
         phase = RoundPhase.Seeking;
         phaseEndsAt = Time.unscaledTime + Mathf.Clamp(SeekingTime.Value, 60f, 900f);
+        timesUpMessageEndsAt = Time.unscaledTime + 3.5f;
         Status.Value = $"Seeking started. Find {RemainingHiders} hider{Plural(RemainingHiders)} within " +
                        $"{FormatTime(SecondsRemaining)}.";
         Plugin.Log?.LogInfo("Hide & Seek seeking phase started.");
@@ -398,6 +414,7 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
     {
         RestoreHiderNames();
         ReleaseSeeker();
+        RestoreRoundNavigationUi();
         if (PropSpawnManager.IsServer)
         {
             AwardWinners(seekerWon);
@@ -442,12 +459,14 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
         RestoreHiderNames();
         ReleaseSeeker();
         RestoreSeekerMarker();
+        RestoreRoundNavigationUi();
         Hiders.Clear();
         FoundHiders.Clear();
         seeker = null;
         seekerOriginalName = "";
         resultText = "";
         lastFoundText = "";
+        timesUpMessageEndsAt = 0f;
         phase = RoundPhase.Idle;
         if (announce) Status.Value = "Hide & Seek round stopped and player settings restored.";
     }
@@ -466,6 +485,28 @@ public sealed class FreeRoamHideAndSeekMod : BaseMod
                 ? PlayerName(seeker)
                 : seekerOriginalName);
         ownsSeekerMarker = false;
+    }
+
+    private static void HideRoundNavigationUi()
+    {
+        foreach (var minimap in UnityEngine.Object.FindObjectsOfType<UIGameplayMinimap>())
+            HideNavigationObject(minimap ? minimap.gameObject : null);
+        foreach (var iconCanvas in UnityEngine.Object.FindObjectsOfType<UIPlayerBasedGameplayWorldIconCanvas>())
+            HideNavigationObject(iconCanvas ? iconCanvas.gameObject : null);
+    }
+
+    private static void HideNavigationObject(GameObject navigationObject)
+    {
+        if (!navigationObject || HiddenNavigationObjects.ContainsKey(navigationObject)) return;
+        HiddenNavigationObjects[navigationObject] = navigationObject.activeSelf;
+        navigationObject.SetActive(false);
+    }
+
+    private static void RestoreRoundNavigationUi()
+    {
+        foreach (var entry in HiddenNavigationObjects)
+            if (entry.Key) entry.Key.SetActive(entry.Value);
+        HiddenNavigationObjects.Clear();
     }
 
     private static bool IsNameVisible(PlayerCharacter character)

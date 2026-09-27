@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.33.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.33.1 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -14,7 +14,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Heavy Automatic Gun:** a visible full-auto weapon with a 300-round magazine, infinite reserve ammo, gunshot audio, and animated or instant reloads.
 - **Street NPC Population:** randomized civilian Wobblies that spawn on nearby walkable streets, wander, and recycle at a safe distance.
 - **Police Chase Mode:** a five-star wanted system triggered by NPC collisions, weapon harassment, and speeding, with NavMesh police pursuit and arrests.
-- **Free-Roam Hide & Seek:** random seeker/hider roles, a one-minute seeker blackout, five-minute seek timer, vehicle-friendly hiding, proximity tagging, and cash prizes outside Arcade Mode.
+- **Free-Roam Hide & Seek:** random seeker/hider roles, a one-minute seeker blackout, hidden minimap and world icons, five-minute seek timer, vehicle-friendly hiding, proximity tagging, and cash prizes outside Arcade Mode.
 - **Grappling Hook:** a toggle-fired, unlimited-range grappling hook with a visible claw, automatic reeling, and temporary wall-impact noclip protection.
 - **Power Clothes & Crazy Cars:** powered outfits and extreme vehicle abilities including speed, selective wall noclip, invisibility, missiles, and car jetpacks.
 - **Shrink Ray:** switch between shrink and grow modes with Q, restore individual targets, and resize world objects including vehicles, NPCs, buildings, trees, and roads.
@@ -139,7 +139,7 @@ For WobblyTube, open **Extra Mods → WobblyTube** and choose **Open WobblyTube 
 
 For the Building & Wobbly Jet Spawner, open **Extra Mods → Building & Wobbly Jet Spawner**. Search the building list and press **Spawn building** to place it on the ground in front of the camera. Rotation, distance, height, ground alignment, and frozen physics are adjustable; use the undo and clear buttons to remove spawned scenery. Enable **Show full prefab catalog** and refresh when a building is not detected by the filtered list. Search the aircraft list to spawn any functional aircraft, press **Spawn Wobbly Jet** for the best genuine jet match, or press **Spawn Super Fast Jet** for the boosted version. The Super Fast Jet raises the game plane controller's native speed limit and acceleration instead of relying only on added force. Hold **W** for extreme acceleration and **Left Shift + W** for boost; acceleration, maximum speed, and boost multiplier are adjustable. You can also type **spawn super fast jet** in Host Command Chat. Aircraft require offline play or the lobby host.
 
-For Free-Roam Hide & Seek, open **Extra Mods → Free-Roam Hide & Seek** while hosting a normal world with at least one other player. Press **Start Hide & Seek** to randomly assign one seeker and make everyone else a hider. Each mod-enabled player sees their role on screen. The seeker is held in place behind a black screen for one minute while hiders can run, drive cars, or fly planes. The seeker then has five minutes to get within the adjustable tag distance of every hider. A seeker win pays that player **1,000 dollars**; a hider-team win pays every hider **100 dollars**. Install the mod for each player who should receive the private role overlay and seeker blackout. You can also type **start hide and seek** or **stop hide and seek** in Host Command Chat.
+For Free-Roam Hide & Seek, open **Extra Mods → Free-Roam Hide & Seek** while hosting a normal world with at least one other player. Press **Start Hide & Seek** to randomly assign one seeker and make everyone else a hider. Each mod-enabled player sees their role on screen. The seeker is held in place behind a black screen for one minute while hiders can run, drive cars, or fly planes. The minimap and world icons are hidden only for the duration of the round and restored afterward. When hiding time ends, a large **TIME'S UP!** alert announces the five-minute seeking phase. The seeker wins by getting within the adjustable tag distance of every hider. A seeker win pays that player **1,000 dollars**; a hider-team win pays every hider **100 dollars**. Install the mod for each player who should receive the private role overlay and seeker blackout. You can also type **start hide and seek** or **stop hide and seek** in Host Command Chat.
 
 For Host Command Chat, open **Extra Mods → Host Command Chat** and press **Open Command Chat**, or press **F9**. This is a local command console rather than player chat, and commands run only for the offline player or lobby host. It understands natural requests including **make my speed 50**, **can I have 1000 dollars**, **set my balance to 5000**, **car speed 100**, and **make paintball gun fastest**. The fastest/max-out commands work for every Extra Mods weapon and maximize its power, speed, range, capacity, rapid-fire, and other performance settings while leaving fire intervals, cooldowns, colors, and aiming position unchanged. Money is credited through the game save and UI system. More than 250 command phrases control Extra Mods weapons, spawning, cleanup, NPCs, police, driving, recording, powers, gravity, time scale, and movement. Type **help**, **help 2**, **help guns**, **help spawning**, or **help systems** in the window.
 
@@ -157,4 +157,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.33.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.33.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
