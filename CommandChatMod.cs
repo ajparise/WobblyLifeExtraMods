@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Reflection;
 using System.Text.RegularExpressions;
 using lstwoMODS_Core.Hacks;
 using lstwoMODS_Core.UI;
@@ -23,6 +24,13 @@ public sealed class CommandChatMod : BaseMod
     private static readonly List<CommandInfo> HelpEntries = new();
     private static readonly List<ChatMessage> Messages = new();
     private static readonly Regex NumberRegex = new(@"-?\d+(?:\.\d+)?", RegexOptions.Compiled);
+    private static readonly string[] FastestSettingExclusions =
+    {
+        "interval", "cooldown", "crosshair", "offset", "muzzle", "reload",
+        "paint red", "paint green", "paint blue", "blade red", "blade green", "blade blue",
+        "color hue", "random firework colors", "gravity", "require line of sight",
+        "requires line of sight", "require visible target"
+    };
     private static Rect windowRect;
     private static Vector2 messageScroll;
     private static string input = "";
@@ -42,7 +50,7 @@ public sealed class CommandChatMod : BaseMod
     public override string Name => "Host Command Chat";
 
     public override string Description =>
-        "A host-only local command window that understands natural money and speed requests plus 100+ Extra Mods commands.";
+        "A host-only local command window that understands natural money and speed requests plus 250+ Extra Mods commands.";
 
     public override ModsWindow ModsWindow => lstwoMODS_WobblyLife.Plugin.ExtraModsWindow;
 
@@ -55,7 +63,7 @@ public sealed class CommandChatMod : BaseMod
             new TextWrapped("CommandChatHelp",
                 "This is a command console, not player-to-player chat. Only the offline player or lobby host can run " +
                 "commands. Try: make my speed 50, can I have 1000 dollars, set my balance to 5000, spawn Wobbly Jet, " +
-                "equip wind cannon, or help. F9 opens and closes the window. Use help 2 for more command pages or " +
+                "equip wind cannon, make paintball gun fastest, or help. F9 opens and closes the window. Use help 2 for more command pages or " +
                 "help guns, help money, help spawning, and help systems."),
             base.BuildPanel(id),
             new HStack("CommandChatActions",
@@ -176,7 +184,7 @@ public sealed class CommandChatMod : BaseMod
         }
         if (send) SubmitInput();
         GUILayout.EndHorizontal();
-        GUILayout.Label("Examples: make my speed 50  •  can I have 1000 dollars  •  spawn Wobbly Jet  •  help guns");
+        GUILayout.Label("Examples: make my speed 50  •  make paintball gun fastest  •  spawn Wobbly Jet  •  help guns");
         GUILayout.EndVertical();
         GUI.DragWindow(new Rect(0f, 0f, windowRect.width - 220f, 24f));
     }
@@ -430,25 +438,29 @@ public sealed class CommandChatMod : BaseMod
 
     private static void RegisterCommands()
     {
-        RegisterWeapon("wind cannon", WindCannonMod.Equip, WindCannonMod.Fire, WindCannonMod.Unequip);
-        RegisterWeapon("prop gun", PropSpawnerGunMod.Equip, PropSpawnerGunMod.Fire, PropSpawnerGunMod.Unequip);
-        RegisterWeapon("rocket launcher", RocketLauncherMod.Equip, RocketLauncherMod.Fire, RocketLauncherMod.Unequip);
-        RegisterWeapon("paintball gun", PaintballGunMod.Equip, PaintballGunMod.Fire, PaintballGunMod.Unequip);
-        RegisterWeapon("machine gun", HeavyAutomaticGunMod.Equip, HeavyAutomaticGunMod.Fire, HeavyAutomaticGunMod.Unequip);
-        RegisterWeapon("laser eyes", LaserEyesMod.Equip, LaserEyesMod.Fire, LaserEyesMod.Unequip);
-        RegisterWeapon("lava gun", LavaGunMod.Equip, LavaGunMod.Fire, LavaGunMod.Unequip);
-        RegisterWeapon("chaos wand", ChaosWandMod.Equip, ChaosWandMod.Fire, ChaosWandMod.Unequip);
-        RegisterWeapon("lightning gun", LightningGunMod.Equip, LightningGunMod.Fire, LightningGunMod.Unequip);
-        RegisterWeapon("wobbly head gun", WobblyHeadHomingGunMod.Equip, WobblyHeadHomingGunMod.Fire, WobblyHeadHomingGunMod.Unequip);
-        RegisterWeapon("banana launcher", BananaPeelLauncherMod.Equip, BananaPeelLauncherMod.Fire, BananaPeelLauncherMod.Unequip);
-        RegisterWeapon("tornado gun", TornadoGunMod.Equip, TornadoGunMod.Fire, TornadoGunMod.Unequip);
-        RegisterWeapon("firework minigun", FireworkMinigunMod.Equip, FireworkMinigunMod.Fire, FireworkMinigunMod.Unequip);
-        RegisterWeapon("jelly gun", JellyGunMod.Equip, JellyGunMod.Fire, JellyGunMod.Unequip);
-        RegisterWeapon("tunnel drill", TemporaryTunnelDrillMod.Equip, TemporaryTunnelDrillMod.Drill, TemporaryTunnelDrillMod.Unequip);
-        RegisterWeapon("power sword", PowerSwordMod.Equip, PowerSwordMod.Swing, PowerSwordMod.Unequip);
-        RegisterWeapon("bubble blaster", BubbleBlasterMod.Equip, BubbleBlasterMod.Fire, BubbleBlasterMod.Unequip);
-        RegisterWeapon("tsunami gun", TsunamiGunMod.Equip, TsunamiGunMod.Fire, TsunamiGunMod.Unequip);
-        RegisterWeapon("meteor cannon", MeteorShowerCannonMod.Equip, MeteorShowerCannonMod.Fire, MeteorShowerCannonMod.Unequip);
+        RegisterWeapon("wind cannon", typeof(WindCannonMod), WindCannonMod.Equip, WindCannonMod.Fire, WindCannonMod.Unequip);
+        RegisterWeapon("prop gun", typeof(PropSpawnerGunMod), PropSpawnerGunMod.Equip, PropSpawnerGunMod.Fire, PropSpawnerGunMod.Unequip);
+        RegisterWeapon("rocket launcher", typeof(RocketLauncherMod), RocketLauncherMod.Equip, RocketLauncherMod.Fire, RocketLauncherMod.Unequip);
+        RegisterWeapon("paintball gun", typeof(PaintballGunMod), PaintballGunMod.Equip, PaintballGunMod.Fire, PaintballGunMod.Unequip);
+        RegisterWeapon("machine gun", typeof(HeavyAutomaticGunMod), HeavyAutomaticGunMod.Equip, HeavyAutomaticGunMod.Fire, HeavyAutomaticGunMod.Unequip);
+        RegisterWeapon("laser eyes", typeof(LaserEyesMod), LaserEyesMod.Equip, LaserEyesMod.Fire, LaserEyesMod.Unequip);
+        RegisterWeapon("lava gun", typeof(LavaGunMod), LavaGunMod.Equip, LavaGunMod.Fire, LavaGunMod.Unequip);
+        RegisterWeapon("chaos wand", typeof(ChaosWandMod), ChaosWandMod.Equip, ChaosWandMod.Fire, ChaosWandMod.Unequip);
+        RegisterWeapon("lightning gun", typeof(LightningGunMod), LightningGunMod.Equip, LightningGunMod.Fire, LightningGunMod.Unequip);
+        RegisterWeapon("wobbly head gun", typeof(WobblyHeadHomingGunMod), WobblyHeadHomingGunMod.Equip, WobblyHeadHomingGunMod.Fire, WobblyHeadHomingGunMod.Unequip);
+        RegisterWeapon("banana launcher", typeof(BananaPeelLauncherMod), BananaPeelLauncherMod.Equip, BananaPeelLauncherMod.Fire, BananaPeelLauncherMod.Unequip);
+        RegisterWeapon("tornado gun", typeof(TornadoGunMod), TornadoGunMod.Equip, TornadoGunMod.Fire, TornadoGunMod.Unequip);
+        RegisterWeapon("firework minigun", typeof(FireworkMinigunMod), FireworkMinigunMod.Equip, FireworkMinigunMod.Fire, FireworkMinigunMod.Unequip);
+        RegisterWeapon("jelly gun", typeof(JellyGunMod), JellyGunMod.Equip, JellyGunMod.Fire, JellyGunMod.Unequip);
+        RegisterWeapon("tunnel drill", typeof(TemporaryTunnelDrillMod), TemporaryTunnelDrillMod.Equip, TemporaryTunnelDrillMod.Drill, TemporaryTunnelDrillMod.Unequip);
+        RegisterWeapon("power sword", typeof(PowerSwordMod), PowerSwordMod.Equip, PowerSwordMod.Swing, PowerSwordMod.Unequip);
+        RegisterWeapon("bubble blaster", typeof(BubbleBlasterMod), BubbleBlasterMod.Equip, BubbleBlasterMod.Fire, BubbleBlasterMod.Unequip);
+        RegisterWeapon("tsunami gun", typeof(TsunamiGunMod), TsunamiGunMod.Equip, TsunamiGunMod.Fire, TsunamiGunMod.Unequip);
+        RegisterWeapon("meteor cannon", typeof(MeteorShowerCannonMod), MeteorShowerCannonMod.Equip, MeteorShowerCannonMod.Fire, MeteorShowerCannonMod.Unequip);
+
+        RegisterFastestCommands("grappling hook", typeof(GrapplingHookMod));
+        RegisterFastestCommands("shrink ray", typeof(ShrinkRayMod));
+        RegisterFastestCommands("portal gun", typeof(PortalGunMod));
 
         Register("equip grappling hook", "guns", "equipped the grappling hook", GrapplingHookMod.Equip);
         Register("release grappling hook", "guns", "released the grappling hook", GrapplingHookMod.Release);
@@ -532,7 +544,7 @@ public sealed class CommandChatMod : BaseMod
         Register("reset command effects", "systems", "reset temporary command effects", ResetCommandEffects);
     }
 
-    private static void RegisterWeapon(string name, Action equip, Action fire, Action unequip)
+    private static void RegisterWeapon(string name, Type weaponType, Action equip, Action fire, Action unequip)
     {
         Register($"equip {name}", "guns", $"equipped the {name}", equip);
         Register($"give me {name}", "guns", $"equipped the {name}", equip);
@@ -541,6 +553,65 @@ public sealed class CommandChatMod : BaseMod
         Register($"shoot {name}", "guns", $"equipped and fired the {name}", () => { equip(); fire(); });
         Register($"unequip {name}", "guns", $"put away the {name}", unequip);
         Register($"put away {name}", "guns", $"put away the {name}", unequip);
+        RegisterFastestCommands(name, weaponType);
+    }
+
+    private static void RegisterFastestCommands(string name, Type weaponType)
+    {
+        Action maximize = () => MaximizeWeaponSettings(name, weaponType);
+        var description = $"maximized the {name} without changing its fire interval, cooldown, or aiming position";
+        Register($"make {name} fastest", "guns", description, maximize);
+        Register($"make my {name} fastest", "guns", description, maximize);
+        Register($"max out {name}", "guns", description, maximize);
+    }
+
+    private static void MaximizeWeaponSettings(string name, Type weaponType)
+    {
+        var changed = new List<string>();
+        foreach (var field in weaponType.GetFields(BindingFlags.Public | BindingFlags.Static))
+        {
+            var setting = field.GetCustomAttributes(false)
+                .FirstOrDefault(attribute => attribute.GetType().Name == "ModSettingAttribute");
+            if (setting == null) continue;
+
+            var label = ReadAttributeValue(setting, "Label") as string ?? "";
+            var searchableName = $"{field.Name} {label}".ToLowerInvariant();
+            if (FastestSettingExclusions.Any(searchableName.Contains)) continue;
+
+            var reference = field.GetValue(null);
+            if (reference == null) continue;
+            var referenceType = reference.GetType();
+            var valueProperty = referenceType.GetProperty("Value", BindingFlags.Public | BindingFlags.Instance);
+            var valueField = referenceType.GetField("Value", BindingFlags.Public | BindingFlags.Instance);
+            var valueType = valueProperty?.PropertyType ?? valueField?.FieldType;
+            if (valueType == null) continue;
+
+            object desired;
+            if (valueType == typeof(bool)) desired = true;
+            else
+            {
+                var maximum = ReadAttributeValue(setting, "Max");
+                if (maximum == null) continue;
+                desired = Convert.ChangeType(maximum, valueType, CultureInfo.InvariantCulture);
+            }
+
+            if (valueProperty?.CanWrite == true) valueProperty.SetValue(reference, desired, null);
+            else if (valueField != null) valueField.SetValue(reference, desired);
+            else continue;
+            changed.Add(string.IsNullOrWhiteSpace(label) ? field.Name : label);
+        }
+
+        if (changed.Count == 0)
+            throw new InvalidOperationException($"No adjustable performance settings were found for the {name}.");
+        Status.Value = $"Maximized {changed.Count} {name} settings; fire timing and aim placement were unchanged.";
+    }
+
+    private static object ReadAttributeValue(object attribute, string name)
+    {
+        var type = attribute.GetType();
+        var property = type.GetProperty(name, BindingFlags.Public | BindingFlags.Instance);
+        if (property != null) return property.GetValue(attribute, null);
+        return type.GetField(name, BindingFlags.Public | BindingFlags.Instance)?.GetValue(attribute);
     }
 
     private static void Register(string phrase, string category, string description, Action action)
