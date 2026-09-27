@@ -47,7 +47,7 @@ public sealed class BuildingJetSpawnerMod : BaseMod
     public override string Name => "Building & Wobbly Jet Spawner";
 
     public override string Description =>
-        "Search and place ground-aligned buildings, spawn functional aircraft, or instantly create the Wobbly Jet.";
+        "Search and place ground-aligned buildings, spawn functional aircraft, or create a Wobbly Jet and Super Fast Jet.";
 
     public override ModsWindow ModsWindow => lstwoMODS_WobblyLife.Plugin.ExtraModsWindow;
 
@@ -75,6 +75,17 @@ public sealed class BuildingJetSpawnerMod : BaseMod
     [ModSetting(Order = 80, Min = 1f, Max = 30f, Label = "Aircraft height")]
     public static Ref<float> AircraftHeight = new(7f);
 
+    [ModSetting(Order = 90, Min = 25f, Max = 500f, Label = "Super jet acceleration",
+        Description = "Extra forward acceleration while holding W in the Super Fast Jet.")]
+    public static Ref<float> SuperJetAcceleration = new(180f);
+
+    [ModSetting(Order = 100, Min = 100f, Max = 800f, Label = "Super jet maximum speed")]
+    public static Ref<float> SuperJetMaximumSpeed = new(450f);
+
+    [ModSetting(Order = 110, Min = 1f, Max = 5f, Label = "Shift boost multiplier",
+        Description = "Acceleration multiplier while holding Left Shift and W.")]
+    public static Ref<float> SuperJetBoostMultiplier = new(2.5f);
+
     protected override void OnStaticInit()
     {
         AssetDatabase.OnReady += RefreshCatalog;
@@ -88,7 +99,8 @@ public sealed class BuildingJetSpawnerMod : BaseMod
                 "Type to search for a building, then spawn it on the ground in front of the camera. Buildings are local " +
                 "scenery, stay upright, and can be undone or cleared. If a building is missing, enable Show full prefab " +
                 "catalog and press Refresh. Aircraft use genuine network vehicle prefabs so they remain enterable. Host or " +
-                "offline play is required for aircraft."),
+                "offline play is required for aircraft. The Super Fast Jet uses W for extreme acceleration and " +
+                "Left Shift + W for boost."),
             new SeparatorText("Buildings", "Buildings"),
             new SearchableCombo("Building", Array.Empty<string>())
                 .WithItems(BuildingItems)
@@ -108,7 +120,8 @@ public sealed class BuildingJetSpawnerMod : BaseMod
                 .WithSelectedIndex(AircraftIndex),
             new HStack("JetSpawnActions",
                 ActionMenu(new Button("Spawn selected aircraft", SpawnSelectedAircraft), nameof(SpawnSelectedAircraft)),
-                ActionMenu(new Button("Spawn Wobbly Jet", SpawnWobblyJet), nameof(SpawnWobblyJet))
+                ActionMenu(new Button("Spawn Wobbly Jet", SpawnWobblyJet), nameof(SpawnWobblyJet)),
+                ActionMenu(new Button("Spawn Super Fast Jet", SpawnSuperFastJet), nameof(SpawnSuperFastJet))
             ).WithContentWidth(),
             base.BuildPanel(id),
             ActionMenu(new Button("Refresh building and aircraft lists", RefreshCatalog).WithContentWidth(),
@@ -267,6 +280,19 @@ public sealed class BuildingJetSpawnerMod : BaseMod
         SpawnAircraft(jet, "Wobbly Jet");
     }
 
+    [ModAction(ShowInUI = false)]
+    public static void SpawnSuperFastJet()
+    {
+        var jet = ResolveWobblyJet();
+        if (jet == null)
+        {
+            Status.Value = "The jet prefab was not found in this asset scan. Refresh after entering a save.";
+            return;
+        }
+
+        SpawnAircraft(jet, "Super Fast Jet", spawned => SuperFastJetController.Attach(spawned));
+    }
+
     private static IEnumerator SpawnBuildingLocal(
         IEnumerable<string> candidates,
         Vector3 groundPosition,
@@ -325,7 +351,7 @@ public sealed class BuildingJetSpawnerMod : BaseMod
         if (Mathf.Abs(adjustment) < 250f) building.transform.position += Vector3.up * adjustment;
     }
 
-    private static void SpawnAircraft(AssetDatabase.AssetEntry entry, string label)
+    private static void SpawnAircraft(AssetDatabase.AssetEntry entry, string label, Action<GameObject> configure = null)
     {
         if (!PropSpawnManager.IsServer)
         {
@@ -353,7 +379,7 @@ public sealed class BuildingJetSpawnerMod : BaseMod
             Networked = true
         };
         Status.Value = $"Spawning {label}...";
-        TryNetworkSpawn(PropAddressResolver.Fallbacks(identity).ToList(), 0, position, rotation, identity, label);
+        TryNetworkSpawn(PropAddressResolver.Fallbacks(identity).ToList(), 0, position, rotation, identity, label, configure);
     }
 
     private static void TryNetworkSpawn(
@@ -362,7 +388,8 @@ public sealed class BuildingJetSpawnerMod : BaseMod
         Vector3 position,
         Quaternion rotation,
         PropIdentity identity,
-        string label)
+        string label,
+        Action<GameObject> configure = null)
     {
         if (index >= candidates.Count)
         {
@@ -375,7 +402,7 @@ public sealed class BuildingJetSpawnerMod : BaseMod
             {
                 if (behaviour == null)
                 {
-                    TryNetworkSpawn(candidates, index + 1, position, rotation, identity, label);
+                    TryNetworkSpawn(candidates, index + 1, position, rotation, identity, label, configure);
                     return;
                 }
                 var spawned = behaviour.gameObject;
@@ -388,6 +415,7 @@ public sealed class BuildingJetSpawnerMod : BaseMod
                     renderer.forceRenderingOff = false;
                 }
                 PropSpawnManager.Register(spawned, identity, null, null);
+                configure?.Invoke(spawned);
                 Status.Value = $"Spawned {label}. Walk up and press F to enter it.";
                 Plugin.Log?.LogInfo(Status.Value);
             },
@@ -515,5 +543,70 @@ public sealed class BuildingJetSpawnerMod : BaseMod
         while (value > 180f) value -= 360f;
         while (value < -180f) value += 360f;
         return value;
+    }
+}
+
+internal sealed class SuperFastJetController : MonoBehaviour
+{
+    private PlayerPlane plane;
+    private Rigidbody body;
+
+    internal static void Attach(GameObject spawned)
+    {
+        if (!spawned || spawned.GetComponent<SuperFastJetController>()) return;
+        var targetPlane = spawned.GetComponent<PlayerPlane>() ??
+                          spawned.GetComponentInChildren<PlayerPlane>(true);
+        if (!targetPlane)
+        {
+            Plugin.Log?.LogWarning("Super Fast Jet spawned without a PlayerPlane component.");
+            return;
+        }
+
+        spawned.name = "Super Fast Jet";
+        var controller = spawned.AddComponent<SuperFastJetController>();
+        controller.plane = targetPlane;
+        controller.ResolveBody();
+    }
+
+    private void ResolveBody()
+    {
+        if (!plane) return;
+        var movement = plane.GetVehicleMovementBase();
+        body = movement ? movement.GetRigidbody() : null;
+        if (!body) body = plane.GetComponent<Rigidbody>();
+        if (!body) body = plane.GetComponentInChildren<Rigidbody>(true);
+    }
+
+    private void FixedUpdate()
+    {
+        if (!plane)
+        {
+            Destroy(this);
+            return;
+        }
+        if (!body)
+        {
+            ResolveBody();
+            if (!body) return;
+        }
+
+        var driver = plane.GetDriverPlayerController();
+        if (!driver || !driver.IsLocal()) return;
+
+        var maximumSpeed = Mathf.Clamp(BuildingJetSpawnerMod.SuperJetMaximumSpeed.Value, 100f, 800f);
+        if (Input.GetKey(KeyCode.W))
+        {
+            var multiplier = Input.GetKey(KeyCode.LeftShift)
+                ? Mathf.Clamp(BuildingJetSpawnerMod.SuperJetBoostMultiplier.Value, 1f, 5f)
+                : 1f;
+            var forwardSpeed = Vector3.Dot(body.velocity, plane.transform.forward);
+            if (forwardSpeed < maximumSpeed)
+                body.AddForce(plane.transform.forward *
+                              Mathf.Clamp(BuildingJetSpawnerMod.SuperJetAcceleration.Value, 25f, 500f) * multiplier,
+                    ForceMode.Acceleration);
+        }
+
+        if (body.velocity.sqrMagnitude > maximumSpeed * maximumSpeed)
+            body.velocity = body.velocity.normalized * maximumSpeed;
     }
 }

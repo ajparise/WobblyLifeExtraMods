@@ -513,6 +513,7 @@ public sealed class CommandChatMod : BaseMod
         Register("fire car missile", "powers", "fired the crazy car missile", PowerClothesCrazyCarsMod.FireMissile);
 
         Register("spawn wobbly jet", "spawning", "spawned the Wobbly Jet", BuildingJetSpawnerMod.SpawnWobblyJet);
+        Register("spawn super fast jet", "spawning", "spawned the Super Fast Jet", BuildingJetSpawnerMod.SpawnSuperFastJet);
         Register("spawn selected aircraft", "spawning", "spawned the selected aircraft", BuildingJetSpawnerMod.SpawnSelectedAircraft);
         Register("spawn building", "spawning", "spawned the selected building", BuildingJetSpawnerMod.SpawnBuilding);
         Register("undo building", "cleanup", "removed the last spawned building", BuildingJetSpawnerMod.UndoLastBuilding);

@@ -121,6 +121,8 @@ public sealed class VehicleAircraftSpawnerMod : BaseMod
             new HStack("AircraftSpawnActions",
                 ActionMenu(new Button("Spawn aircraft once", SpawnAircraft), nameof(SpawnAircraft)),
                 ActionMenu(new Button("Equip aircraft gun", EquipAircraftGun), nameof(EquipAircraftGun)),
+                ActionMenu(new Button("Spawn Super Fast Jet", BuildingJetSpawnerMod.SpawnSuperFastJet),
+                    nameof(BuildingJetSpawnerMod.SpawnSuperFastJet)),
                 ActionMenu(new Button("Spawn UFO", SpawnUfo), nameof(SpawnUfo)),
                 ActionMenu(new Button("Spawn Egg UFO", SpawnEggUfo), nameof(SpawnEggUfo))
             ).WithContentWidth(),
