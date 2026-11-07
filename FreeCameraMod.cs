@@ -24,7 +24,7 @@ public sealed class FreeCameraMod : BaseMod
     public static Ref<float> Speed = new(20f);
 
     public override Container BuildPanel(string id) => new Container(id,
-        new TextWrapped("FreeCameraHelp", "Start free camera in a world. WASD moves, mouse looks, Space rises, Left Ctrl descends, and Shift moves faster. Press O to return to your player."),
+        new TextWrapped("FreeCameraHelp", "Start free camera in a world. WASD moves, mouse looks, Space rises, Left Ctrl descends, and Shift moves faster. Press H to teleport your Wobbly to the camera, or O to return to your player."),
         base.BuildPanel(id),
         new HStack("FreeCameraActions", ActionMenu(new Button("Start free camera", StartCamera), nameof(StartCamera)),
             ActionMenu(new Button("Return to player", StopCamera), nameof(StopCamera))).WithContentWidth(),
@@ -49,7 +49,7 @@ public sealed class FreeCameraMod : BaseMod
         Cursor.visible = false;
         driver = camera.gameObject.AddComponent<FreeCameraDriver>();
         driver.Initialize(camera.transform);
-        Status.Value = "Free camera active. Press O to return.";
+        Status.Value = "Free camera active. H teleports your Wobbly here; O returns to your player.";
     }
 
     [ModAction(ShowInUI = false)]
@@ -68,7 +68,22 @@ public sealed class FreeCameraMod : BaseMod
     public override void Update()
     {
         if (driver && (!GameInstance.InstanceExists || Input.GetKeyDown(KeyCode.O))) StopCamera();
+        else if (driver && Input.GetKeyDown(KeyCode.H)) TeleportPlayerToCamera();
         else if (!driver && input) StopCamera();
+    }
+
+    private static void TeleportPlayerToCamera()
+    {
+        var player = GameInstance.InstanceExists ? GameInstance.Instance.GetFirstLocalPlayerController() : null;
+        var character = player ? player.GetPlayerCharacter() : null;
+        if (!character || !driver)
+        {
+            Status.Value = "Player or camera unavailable; enter a world before teleporting.";
+            return;
+        }
+        player.GetPlayerControllerInteractor()?.ForceRequestExit();
+        character.SetPlayerPosition(driver.CameraPosition);
+        Status.Value = "Teleported your Wobbly to the camera. Press O to return to your player.";
     }
 
     internal static void Shutdown() => StopCamera();
@@ -79,6 +94,8 @@ public sealed class FreeCameraDriver : MonoBehaviour
     private Vector3 position;
     private float yaw;
     private float pitch;
+
+    public Vector3 CameraPosition => position;
 
     public void Initialize(Transform cameraTransform)
     {
