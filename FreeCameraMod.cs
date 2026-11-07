@@ -17,14 +17,14 @@ public sealed class FreeCameraMod : BaseMod
     private static bool oldVisible;
 
     public override string Name => "Free Camera";
-    public override string Description => "Fly around the world with a free camera; press O to return.";
+    public override string Description => "Press O to turn free camera on or off.";
     public override ModsWindow ModsWindow => lstwoMODS_WobblyLife.Plugin.ExtraModsWindow;
 
     [ModSetting(Order = 10, Min = 2f, Max = 100f, Label = "Camera speed")]
     public static Ref<float> Speed = new(20f);
 
     public override Container BuildPanel(string id) => new Container(id,
-        new TextWrapped("FreeCameraHelp", "Start free camera in a world. WASD moves, mouse looks, Space rises, Left Ctrl descends, and Shift moves faster. Press H to teleport your Wobbly to the camera, or O to return to your player."),
+        new TextWrapped("FreeCameraHelp", "Press O in a world to turn free camera on or off. WASD moves, mouse looks, Space rises, Left Ctrl descends, and Shift moves faster. Press H to teleport your Wobbly to the camera."),
         base.BuildPanel(id),
         new HStack("FreeCameraActions", ActionMenu(new Button("Start free camera", StartCamera), nameof(StartCamera)),
             ActionMenu(new Button("Return to player", StopCamera), nameof(StopCamera))).WithContentWidth(),
@@ -67,9 +67,18 @@ public sealed class FreeCameraMod : BaseMod
 
     public override void Update()
     {
-        if (driver && (!GameInstance.InstanceExists || Input.GetKeyDown(KeyCode.O))) StopCamera();
+        if (!driver && input) StopCamera();
+        if (!GameInstance.InstanceExists)
+        {
+            if (driver) StopCamera();
+            return;
+        }
+        if (Input.GetKeyDown(KeyCode.O))
+        {
+            if (driver) StopCamera();
+            else StartCamera();
+        }
         else if (driver && Input.GetKeyDown(KeyCode.H)) TeleportPlayerToCamera();
-        else if (!driver && input) StopCamera();
     }
 
     private static void TeleportPlayerToCamera()

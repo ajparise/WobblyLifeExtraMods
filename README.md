@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.34.1 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.34.2 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -15,7 +15,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Street NPC Population:** randomized civilian Wobblies that spawn on nearby walkable streets, wander, and recycle at a safe distance.
 - **Police Chase Mode:** a five-star wanted system triggered by NPC collisions, weapon harassment, and speeding, with NavMesh police pursuit and arrests.
 - **Free-Roam Hide & Seek:** random seeker/hider roles, a one-minute seeker blackout, hidden minimap and world icons, five-minute seek timer, vehicle-friendly hiding, proximity tagging, and cash prizes outside Arcade Mode.
-- **Free Camera:** fly around with WASD and mouse, Space and Left Ctrl for height, Shift for speed, H to teleport your Wobbly to the camera, and O to return to the player.
+- **Free Camera:** press O to toggle free camera, fly with WASD and mouse, use Space and Left Ctrl for height, Shift for speed, and H to teleport your Wobbly to the camera.
 - **Grappling Hook:** a toggle-fired, unlimited-range grappling hook with a visible claw, automatic reeling, and temporary wall-impact noclip protection.
 - **Power Clothes & Crazy Cars:** powered outfits and extreme vehicle abilities including speed, selective wall noclip, invisibility, missiles, and car jetpacks.
 - **Shrink Ray:** switch between shrink and grow modes with Q, restore individual targets, and resize world objects including vehicles, NPCs, buildings, trees, and roads.
@@ -158,4 +158,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.34.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.34.2 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
