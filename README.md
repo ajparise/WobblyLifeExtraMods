@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.35.2 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.35.3 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -18,6 +18,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Free Camera:** press O to toggle free camera, fly with WASD and mouse, use Space and Left Ctrl for height, Shift for speed, and H to teleport your Wobbly to the camera.
 - **Gravity Swap & Black Hole:** toggle gravity on movable physics objects or fire a temporary black hole that pulls and blasts nearby bodies.
 - **Giant Wobbly:** grow your Wobbly and press G to stomp nearby physics objects; restore size from the panel.
+- **Disaster Remote:** select the existing tornado, tsunami or meteor weapon, or aim an earthquake at nearby physics objects.
 - **Grappling Hook:** a toggle-fired, unlimited-range grappling hook with a visible claw, automatic reeling, and temporary wall-impact noclip protection.
 - **Power Clothes & Crazy Cars:** powered outfits and extreme vehicle abilities including speed, selective wall noclip, invisibility, missiles, and car jetpacks.
 - **Shrink Ray:** switch between shrink and grow modes with Q, restore individual targets, and resize world objects including vehicles, NPCs, buildings, trees, and roads.
@@ -160,4 +161,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.35.2 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.35.3 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
