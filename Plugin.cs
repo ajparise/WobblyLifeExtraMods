@@ -9,7 +9,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "com.aj.wobblylife.extramods";
     public const string Name = "Wobbly Life Extra Mods";
-    public const string Version = "1.35.3";
+    public const string Version = "1.36.0";
 
     internal static BepInEx.Logging.ManualLogSource Log { get; private set; }
 
@@ -61,6 +61,8 @@ public sealed class Plugin : BaseUnityPlugin
         FreeCameraMod.Shutdown();
         GravityToyMod.Shutdown();
         GiantWobblyMod.Shutdown();
+        ShapeShiftingCarMod.Shutdown();
+        SuperheroRescueMod.Shutdown();
     }
 
     internal static UnityEngine.Coroutine RunCoroutine(System.Collections.IEnumerator routine)
