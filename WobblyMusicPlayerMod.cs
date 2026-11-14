@@ -29,7 +29,7 @@ public sealed class WobblyMusicPlayerMod : BaseMod
     public override ModsWindow ModsWindow => lstwoMODS_WobblyLife.Plugin.ExtraModsWindow;
 
     public override Container BuildPanel(string id) => new Container(id,
-        new TextWrapped("WobblyMusicHelp", "Press 6 in a world to open the player. Choose an original dubstep, heavy metal or rock loop, adjust the volume, pause or stop. Close with 6 or the close button."),
+        new TextWrapped("WobblyMusicHelp", "Press 6 in a world to open the player. Press 7 to play heavy metal directly. Choose an original dubstep, heavy metal or rock loop, adjust the volume, pause or stop. Close with 6 or the close button."),
         new HStack("WobblyMusicActions", ActionMenu(new Button("Open music player", Open), nameof(Open)), ActionMenu(new Button("Stop music", Stop), nameof(Stop))).WithContentWidth(),
         new TextWrapped("WobblyMusicStatus", "").WithText(Status));
 
@@ -37,6 +37,7 @@ public sealed class WobblyMusicPlayerMod : BaseMod
     {
         if (GameInstance.InstanceExists && Input.GetKeyDown(KeyCode.Alpha6) && (visible || !Cursor.visible))
         { if (visible) Close(); else Open(); }
+        if (GameInstance.InstanceExists && Input.GetKeyDown(KeyCode.Alpha7) && (visible || !Cursor.visible)) Play(1);
         if (visible) { Cursor.visible = true; Cursor.lockState = CursorLockMode.None; }
         if (!GameInstance.InstanceExists && (visible || current >= 0)) { Close(); Stop(); }
     }

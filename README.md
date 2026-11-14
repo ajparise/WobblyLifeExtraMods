@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.38.1 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.38.2 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -22,7 +22,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Shape-Shifting Car:** enable while driving and press J to cycle road, flight and hover-boat modes.
 - **Superhero Rescue Missions:** find an existing NPC, extinguish a mission marker and rescue them for $100.
 - **Minecraft Music Player:** press F11 to search and play locally installed Minecraft Java music and discs; songs are read from your Minecraft assets and are not included in the plugin.
-- **Wobbly Music Player:** press 6 in a world for three generated original instrumental loops (dubstep, heavy metal and rock), with volume, pause and stop controls.
+- **Wobbly Music Player:** press 6 in a world for three generated original instrumental loops (dubstep, heavy metal and rock), or press 7 to play heavy metal directly. Includes volume, pause and stop controls.
 - **Grappling Hook:** a toggle-fired, unlimited-range grappling hook with a visible claw, automatic reeling, and temporary wall-impact noclip protection.
 - **Power Clothes & Crazy Cars:** powered outfits and extreme vehicle abilities including speed, selective wall noclip, invisibility, missiles, and car jetpacks.
 - **Shrink Ray:** switch between shrink and grow modes with Q, restore individual targets, and resize world objects including vehicles, NPCs, buildings, trees, and roads.
@@ -165,4 +165,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.38.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.38.2 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
