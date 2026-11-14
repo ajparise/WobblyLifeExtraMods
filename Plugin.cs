@@ -9,7 +9,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "com.aj.wobblylife.extramods";
     public const string Name = "Wobbly Life Extra Mods";
-    public const string Version = "1.37.0";
+    public const string Version = "1.38.0";
 
     internal static BepInEx.Logging.ManualLogSource Log { get; private set; }
 
@@ -52,6 +52,7 @@ public sealed class Plugin : BaseUnityPlugin
         CommandChatMod.DrawChat();
         FreeRoamHideAndSeekMod.DrawOverlay();
         MinecraftMusicPlayerMod.DrawPlayer();
+        WobblyMusicPlayerMod.DrawPlayer();
     }
 
     private void OnDestroy()
@@ -65,6 +66,7 @@ public sealed class Plugin : BaseUnityPlugin
         ShapeShiftingCarMod.Shutdown();
         SuperheroRescueMod.Shutdown();
         MinecraftMusicPlayerMod.Shutdown();
+        WobblyMusicPlayerMod.Shutdown();
     }
 
     internal static UnityEngine.Coroutine RunCoroutine(System.Collections.IEnumerator routine)
