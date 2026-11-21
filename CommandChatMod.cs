@@ -529,6 +529,7 @@ public sealed class CommandChatMod : BaseMod
         Register("spawn lambo", "spawning", "spawned the custom sports car", CustomLamboMod.SpawnLambo);
         Register("spawn artifacts", "spawning", "started spawning every artifact", ArtifactSpawnerMod.SpawnEveryArtifact);
         Register("spawn money bag", "money", "spawned the configured money bag", MoneyBagSpawnerMod.SpawnMoneyBag);
+        Register("spawn space money bag", "money", "spawned the configured space money bag", SpaceMoneyBagSpawnerMod.Spawn);
         Register("spawn prop", "spawning", "spawned the selected universal prefab", UniversalSpawnerMod.SpawnSelected);
         Register("refresh props", "spawning", "refreshed the prop catalog", PropSpawnerGunMod.RefreshCatalog);
         Register("refresh vehicles", "spawning", "refreshed the vehicle catalog", VehicleAircraftSpawnerMod.RefreshCatalog);
