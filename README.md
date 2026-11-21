@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.41.2 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.42.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -88,7 +88,7 @@ For a custom money bag, open **Extra Mods → Custom Money Bag**, set **Bag amou
 
 For vehicles, open **Extra Mods → Vehicle & Aircraft Spawner**. Search the vehicle or aircraft list by typing, then either spawn once or equip its rapid-fire gun. UFO and Egg UFO have dedicated spawn and gun buttons. Close F2, aim with the amber crosshair, and hold left-click. The rapid-fire interval and crosshair offsets are adjustable; the spawn ray follows the marker. Functional vehicle spawning is host/offline only.
 
-For prop rockets, open **Extra Mods → Rocket Prop Launcher**, search for a small prop such as a fish, bomb, TNT, or food item, and choose **Equip**. Use **Select Christmas tree** to launch a custom decorated tree: this visual and physics projectile is local to the firing computer, disappears after 30 seconds, and is limited to 16 active trees. Close F2 and hold left-click to launch rapidly along the red-orange crosshair. Enable **Contact bomb mode** to override the selected prop with networked TNT that detonates on its first world collision. Velocity, fire interval, muzzle distance, and crosshair offsets are adjustable. This launcher is host/offline only.
+For prop rockets, open **Extra Mods → Rocket Prop Launcher**, search for a small prop such as a fish, bomb, TNT, or food item, and choose **Equip**. Use **Select Christmas tree** to launch a custom decorated tree: this visual and physics projectile is local to the firing computer, disappears after 30 seconds, and is limited to 16 active trees. **Select Wobbly** launches an unclothed yellow network NPC: it moves for 30 seconds, sits for three minutes, then despawns regardless of player distance. Up to 12 launched Wobblies can exist at once; new shots wait for a slot rather than removing existing ones early. Close F2 and hold left-click to launch rapidly along the red-orange crosshair. Enable **Contact bomb mode** to override the selected prop with networked TNT that detonates on its first world collision. Velocity, fire interval, muzzle distance, and crosshair offsets are adjustable. This launcher is host/offline only.
 
 For aerobatics, open **Extra Mods → Realistic Plane Flight** and choose **Enable flight mode**, then enter and pilot a normal plane. Automatic first person activates when you enter the pilot seat and restores your previous camera setting after you exit. Aim strongly upward to commit to one full backflip, downward for a front flip, or left/right for one barrel roll. Recenter the controls before triggering another maneuver, preventing an held input from causing a constant spin. Activation angle, flip speed, roll speed, cross-axis freedom, and automatic first person are adjustable. This mode is intended for offline play or a lobby you host.
 
@@ -168,4 +168,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.41.2 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.42.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

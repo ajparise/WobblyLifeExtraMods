@@ -9,6 +9,7 @@ using lstwoMODS_Core.UI.TabMenus;
 using lstwoMODS_WobblyLife;
 using lstwoMODS_WobblyLife.PropSpawner;
 using UnityEngine;
+using UnityEngine.AI;
 
 namespace WobblyLifeExtraMods;
 
@@ -31,6 +32,9 @@ public sealed class RocketLauncherMod : BaseMod
     private static AssetDatabase.AssetEntry tntEntry;
     private static float nextFireTime;
     private static readonly List<GameObject> ChristmasTrees = new();
+    private static readonly List<LaunchedWobblyProjectile> LaunchedWobblies = new();
+    private static int pendingWobblies;
+    private const int MaximumLaunchedWobblies = 12;
 
     public override string Name => "Rocket Prop Launcher";
 
@@ -65,8 +69,8 @@ public sealed class RocketLauncherMod : BaseMod
     {
         return new Container(id,
             new TextWrapped("RocketLauncherHelp",
-                "Search for a prop or select a candy cane, snowman, or custom Christmas tree, equip, close F2, " +
-                "then aim with the red crosshair and hold left-click. The custom Christmas tree is a local temporary physics projectile. Contact bomb mode always fires TNT."),
+                "Search for a prop or select a candy cane, snowman, Christmas tree, or Wobbly, equip, close F2, " +
+                "then aim with the red crosshair and hold left-click. The Wobbly wanders for 30 seconds, sits for three minutes, and despawns. Trees are local; Wobblies use a network NPC. Contact bomb mode always fires TNT."),
             new SearchableCombo("Projectile prop", Array.Empty<string>())
                 .WithItems(DisplayItems)
                 .WithSelectedIndex(SelectedIndex),
@@ -81,7 +85,8 @@ public sealed class RocketLauncherMod : BaseMod
             new HStack("WinterProjectileActions",
                 ActionMenu(new Button("Select candy cane", SelectCandyCane), nameof(SelectCandyCane)),
                 ActionMenu(new Button("Select snowman", SelectSnowman), nameof(SelectSnowman)),
-                ActionMenu(new Button("Select Christmas tree", SelectChristmasTree), nameof(SelectChristmasTree))
+                ActionMenu(new Button("Select Christmas tree", SelectChristmasTree), nameof(SelectChristmasTree)),
+                ActionMenu(new Button("Select Wobbly", SelectWobbly), nameof(SelectWobbly))
             ).WithContentWidth(),
             new TextWrapped("RocketLauncherStatus", "").WithText(Status)
         );
@@ -136,8 +141,9 @@ public sealed class RocketLauncherMod : BaseMod
         }
 
         var customTree = !ContactBombMode.Value && DisplayItems.Value.Length > entries.Count && SelectedIndex.Value == entries.Count;
+        var wobbly = !ContactBombMode.Value && DisplayItems.Value.Length > entries.Count + 1 && SelectedIndex.Value == entries.Count + 1;
         var entry = ContactBombMode.Value ? tntEntry : SelectedEntry();
-        if (entry == null && !customTree)
+        if (entry == null && !customTree && !wobbly)
         {
             Status.Value = ContactBombMode.Value
                 ? "TNT was not found in this game build. Refresh the projectile list."
@@ -166,6 +172,11 @@ public sealed class RocketLauncherMod : BaseMod
             LaunchChristmasTree(position, rotation, ray.direction);
             return;
         }
+        if (wobbly)
+        {
+            LaunchWobbly(position, rotation, ray.direction);
+            return;
+        }
         var label = ContactBombMode.Value ? "contact bomb" : FriendlyName(entry);
 
         var identity = new PropIdentity
@@ -187,7 +198,8 @@ public sealed class RocketLauncherMod : BaseMod
     [ModAction(ShowInUI = false)]
     public static void RefreshCatalog()
     {
-        var treeSelected = DisplayItems.Value.Length > 0 && SelectedIndex.Value == entries.Count;
+        var customSelected = DisplayItems.Value.Length > entries.Count && SelectedIndex.Value >= entries.Count
+            ? SelectedIndex.Value - entries.Count : -1;
         var previousKey = SelectedIndex.Value >= 0 && SelectedIndex.Value < entries.Count
             ? entries[SelectedIndex.Value].LoadKey
             : null;
@@ -209,12 +221,12 @@ public sealed class RocketLauncherMod : BaseMod
             return string.Equals(name, entry.LoadKey, StringComparison.OrdinalIgnoreCase)
                 ? name
                 : $"{name}  —  {entry.LoadKey}";
-        }).Concat(new[] { "Christmas tree (custom, local)" }).ToArray();
+        }).Concat(new[] { "Christmas tree (custom, local)", "Wobbly (30s wandering, 3m sitting)" }).ToArray();
 
         var restored = previousKey == null
             ? 0
             : entries.FindIndex(entry => string.Equals(entry.LoadKey, previousKey, StringComparison.OrdinalIgnoreCase));
-        SelectedIndex.Value = treeSelected ? entries.Count : restored >= 0 ? restored : 0;
+        SelectedIndex.Value = customSelected >= 0 && customSelected < 2 ? entries.Count + customSelected : restored >= 0 ? restored : 0;
         Status.Value = entries.Count == 0
             ? "The asset database is not ready. Wait for its scan and refresh props."
             : $"Ready: {entries.Count:N0} searchable projectile props; contact TNT {(tntEntry == null ? "not found" : "ready")}.";
@@ -268,6 +280,64 @@ public sealed class RocketLauncherMod : BaseMod
         SelectedIndex.Value = entries.Count;
         ContactBombMode.Value = false;
         Status.Value = "Selected custom Christmas tree (local only). Equip and hold left-click.";
+    }
+
+    [ModAction(ShowInUI = false)] public static void SelectWobbly()
+    {
+        if (DisplayItems.Value.Length <= entries.Count + 1) RefreshCatalog();
+        SelectedIndex.Value = entries.Count + 1;
+        ContactBombMode.Value = false;
+        Status.Value = "Selected Wobbly. It wanders for 30 seconds, then sits for three minutes.";
+    }
+
+    private static void LaunchWobbly(Vector3 position, Quaternion rotation, Vector3 direction)
+    {
+        LaunchedWobblies.RemoveAll(item => !item);
+        if (LaunchedWobblies.Count + pendingWobblies >= MaximumLaunchedWobblies)
+        {
+            Status.Value = "Wobbly limit reached (12). Wait for one to despawn before launching more.";
+            return;
+        }
+        var npc = AssetDatabase.Entries.FirstOrDefault(item => item.IsGameObject &&
+            (string.Equals(item.LoadKey, "NPC Granny", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(item.Name, "NPC Granny", StringComparison.OrdinalIgnoreCase)) &&
+            !string.IsNullOrEmpty(item.NetworkAssetId));
+        if (npc == null) { Status.Value = "Network Wobbly prefab not ready. Wait for the asset scan and refresh."; return; }
+        pendingWobblies++;
+        var candidates = new[] { npc.NetworkAssetId, npc.LoadKey, "NPC Granny" }
+            .Where(value => !string.IsNullOrEmpty(value)).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        SpawnWobbly(candidates, 0, position, rotation, direction, Mathf.Max(1f, LaunchVelocity.Value));
+    }
+
+    private static void SpawnWobbly(IReadOnlyList<string> candidates, int index, Vector3 position,
+        Quaternion rotation, Vector3 direction, float speed)
+    {
+        if (index >= candidates.Count) { pendingWobblies = Mathf.Max(0, pendingWobblies - 1); Status.Value = "Failed to spawn the network Wobbly."; return; }
+        NetworkPrefab.SpawnNetworkPrefab(candidates[index], behaviour =>
+        {
+            if (!behaviour) { SpawnWobbly(candidates, index + 1, position, rotation, direction, speed); return; }
+            pendingWobblies = Mathf.Max(0, pendingWobblies - 1);
+            if (!GameInstance.InstanceExists || !PropSpawnManager.IsServer)
+            {
+                if (behaviour.networkObject != null) behaviour.networkObject.Destroy(); else UnityEngine.Object.Destroy(behaviour.gameObject);
+                return;
+            }
+            var npcObject = behaviour.gameObject;
+            var controller = npcObject.GetComponentInChildren<PlayerNPCController>(true);
+            if (!controller)
+            {
+                Status.Value = "Spawned prefab has no Wobbly controller; removing it.";
+                if (behaviour.networkObject != null) behaviour.networkObject.Destroy(); else UnityEngine.Object.Destroy(npcObject);
+                return;
+            }
+            npcObject.name = "Rocket launcher Wobbly";
+            StreetNpcPopulationMod.PrepareSpawnedNpc(npcObject, position);
+            IgnoreShooterCollisions(npcObject, true);
+            var launched = npcObject.AddComponent<LaunchedWobblyProjectile>();
+            launched.Initialize(controller, behaviour.networkObject, direction, speed);
+            LaunchedWobblies.Add(launched);
+            Status.Value = "Launched a Wobbly! It moves 30 seconds, sits 3 minutes, then despawns.";
+        }, position: position, rotation: rotation, owner: null, bUseChunkSystem: false, bSendTransform: true, bCheckChunk: false);
     }
 
     private static void LaunchChristmasTree(Vector3 position, Quaternion rotation, Vector3 direction)
@@ -533,6 +603,121 @@ internal readonly struct ProjectileCollisionPair
     internal readonly Collider Projectile;
     internal readonly Collider Shooter;
     internal ProjectileCollisionPair(Collider projectile, Collider shooter) { Projectile = projectile; Shooter = shooter; }
+}
+
+/// <summary>Server-owned Wobbly: launched, wandering for 30 seconds, then sitting for 180 seconds.</summary>
+internal sealed class LaunchedWobblyProjectile : MonoBehaviour
+{
+    private PlayerNPCController npc;
+    private HawkNetworkObject network;
+    private RagdollController ragdoll;
+    private PlayerBody playerBody;
+    private NavMeshAgent agent;
+    private float bornAt;
+    private float nextMove;
+    private float nextAppearance;
+    private int appearancePasses;
+    private Vector3 destination;
+    private bool hasDestination;
+    private bool recovered;
+    private bool sitting;
+
+    internal void Initialize(PlayerNPCController controller, HawkNetworkObject networkObject, Vector3 direction, float speed)
+    {
+        npc = controller; network = networkObject; bornAt = Time.unscaledTime;
+        ragdoll = GetComponentInChildren<RagdollController>(true);
+        playerBody = GetComponentInChildren<PlayerBody>(true);
+        ApplyDefaultAppearance();
+        nextAppearance = bornAt + 0.8f;
+        if (ragdoll) ragdoll.Ragdoll();
+        if (playerBody) playerBody.SetRagdollVelocity(direction.normalized * speed);
+        else
+        {
+            foreach (var body in GetComponentsInChildren<Rigidbody>(true))
+                if (body && !body.isKinematic) body.velocity = direction.normalized * speed;
+        }
+        Plugin.Log?.LogInfo("Rocket Wobbly launched; 30 seconds moving, 180 seconds sitting.");
+    }
+
+    private void Update()
+    {
+        var age = Time.unscaledTime - bornAt;
+        if (age >= 210f) { Despawn(); return; }
+        if (!npc) { Despawn(); return; }
+        if (appearancePasses < 2 && Time.unscaledTime >= nextAppearance)
+        {
+            ApplyDefaultAppearance(); appearancePasses++; nextAppearance = Time.unscaledTime + 1.2f;
+        }
+        if (age >= 30f)
+        {
+            if (!sitting) BeginSitting();
+            return;
+        }
+        if (!recovered && age >= 1.2f)
+        {
+            recovered = true;
+            if (ragdoll && ragdoll.IsActiveRagdoll()) ragdoll.Wakeup(true);
+            agent = GetComponent<NavMeshAgent>() ?? gameObject.AddComponent<NavMeshAgent>();
+            agent.radius = 0.35f; agent.height = 1.75f; agent.speed = 2.1f; agent.acceleration = 10f;
+            agent.angularSpeed = 280f; agent.stoppingDistance = 0.25f;
+            if (!agent.isOnNavMesh) agent.enabled = false;
+            npc.SetAnimation(new NPCAnimation { bWalking = true }, true, true);
+        }
+        if (recovered && (!ragdoll || !ragdoll.IsActiveRagdoll())) Wander();
+    }
+
+    private void ApplyDefaultAppearance()
+    {
+        var appearance = npc ? npc.GetCharacterCustomize() : null;
+        if (!appearance) return;
+        appearance.RemoveAllClothes(true);
+        appearance.SetCharacterColor(new Color(1f, 0.8f, 0.16f, 1f), false, -1f);
+    }
+
+    private void Wander()
+    {
+        if (Time.unscaledTime >= nextMove)
+        {
+            nextMove = Time.unscaledTime + UnityEngine.Random.Range(2.5f, 5f);
+            hasDestination = StreetNpcPopulationMod.TryFindWanderDestination(transform.position, out destination);
+            if (hasDestination && agent && agent.enabled && agent.isOnNavMesh) agent.SetDestination(destination);
+        }
+        if (!hasDestination || (agent && agent.enabled && agent.isOnNavMesh)) return;
+        var offset = destination - transform.position; offset.y = 0f;
+        if (offset.sqrMagnitude < 0.3f) { hasDestination = false; return; }
+        var direction = offset.normalized;
+        if (Physics.SphereCast(transform.position + Vector3.up * 0.75f, 0.28f, direction,
+            out var obstacle, 0.75f, ~0, QueryTriggerInteraction.Ignore) && !obstacle.transform.IsChildOf(transform))
+        { hasDestination = false; return; }
+        var next = Vector3.MoveTowards(transform.position, destination, 2.1f * Time.deltaTime);
+        if (StreetNpcPopulationMod.TrySampleWalkableGround(next, 1.5f, out var ground)) next.y = ground.y;
+        transform.position = next;
+        transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(direction, Vector3.up), Time.deltaTime * 7f);
+    }
+
+    private void BeginSitting()
+    {
+        sitting = true; hasDestination = false;
+        if (agent && agent.enabled) { if (agent.isOnNavMesh) agent.ResetPath(); agent.enabled = false; }
+        if (ragdoll && ragdoll.IsActiveRagdoll()) ragdoll.Wakeup(true);
+        if (playerBody) playerBody.SetRagdollVelocity(Vector3.zero);
+        var feet = playerBody ? playerBody.GetCenterFeetPosition() : transform.position;
+        if (StreetNpcPopulationMod.TrySampleWalkableGround(feet, 1f, out var ground) &&
+            (ground - feet).sqrMagnitude < 4f)
+        {
+            transform.position += ground - feet;
+            Physics.SyncTransforms();
+        }
+        npc.SetAnimation(new NPCAnimation { bSitdown = true }, true, true);
+        Plugin.Log?.LogInfo("Rocket Wobbly is sitting; it will despawn after three minutes.");
+    }
+
+    private void Despawn()
+    {
+        enabled = false;
+        if (network != null && network.IsServer()) network.Destroy();
+        else Destroy(gameObject);
+    }
 }
 
 internal sealed class RestoreProjectileCollisions : MonoBehaviour
