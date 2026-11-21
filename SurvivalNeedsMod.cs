@@ -33,23 +33,25 @@ public sealed class SurvivalNeedsMod : BaseMod
     public static Ref<float> HungerRate = new(5f);
     [ModSetting(Order = 20, Min = 1f, Max = 30f, Label = "Thirst loss per minute")]
     public static Ref<float> ThirstRate = new(7f);
-    [ModSetting(Order = 30, Min = 1f, Max = 30f, Label = "Bathroom gain per minute")]
-    public static Ref<float> BathroomRate = new(12f);
+    [ModSetting(Order = 30, Min = 1f, Max = 120f, Label = "Bathroom gain per minute")]
+    public static Ref<float> BathroomRate = new(60f);
     [ModSetting(Order = 40, Min = 30f, Max = 600f, Label = "Poop lifetime (seconds)")]
     public static Ref<float> PoopLifetime = new(180f);
 
     public override Container BuildPanel(string id) => new Container(id,
-        new TextWrapped("SurvivalHelp", "Enable in a world. F5 eats a survival snack, F6 drinks from your refillable survival bottle, and F10 uses a nearby toilet. Sit on a toilet to use it automatically. The bathroom meter fills over time; when urgent your stomach gurgles, and at 100 you have an accident. Snacks and water are unlimited and do not consume game items. Poop is local temporary physics, not a saved or networked prop. Empty hunger/thirst show a warning."),
+        new TextWrapped("SurvivalHelp", "Enable in a world. F5 eats a survival snack, F6 drinks from your refillable survival bottle, and F10 uses a nearby toilet. Sit on a toilet to use it automatically. The bathroom meter fills in about one minute by default; at 70 it gurgles, and at 100 you have an accident. Use Test poop now to check immediately. Snacks and water are unlimited. Poop is temporary local physics and is not networked or saved."),
         base.BuildPanel(id),
         new HStack("SurvivalActions", ActionMenu(new Button("Enable survival", Enable), nameof(Enable)),
             ActionMenu(new Button("Disable and clean up", Disable), nameof(Disable)),
             ActionMenu(new Button("Eat snack", Eat), nameof(Eat)), ActionMenu(new Button("Drink water", Drink), nameof(Drink)),
-            ActionMenu(new Button("Use nearby toilet", UseToilet), nameof(UseToilet))).WithContentWidth(),
+            ActionMenu(new Button("Use nearby toilet", UseToilet), nameof(UseToilet)),
+            ActionMenu(new Button("Test poop now", TestAccident), nameof(TestAccident))).WithContentWidth(),
         new TextWrapped("SurvivalStatus", "").WithText(Status));
 
     [ModAction(ShowInUI = false)] public static void Enable()
     {
         if (!Character()) { Status.Value = "Enter a world before enabling survival."; return; }
+        if (enabled) { Status.Value = "Survival is already enabled; meters were not reset."; return; }
         enabled = true; hunger = 100f; thirst = 100f; bathroom = 0f; nextGurgle = 0f; nextUse = 0f;
         Status.Value = "Survival enabled: F5 snack, F6 water, F10 near a toilet.";
     }
@@ -84,6 +86,12 @@ public sealed class SurvivalNeedsMod : BaseMod
         bathroom = 0f; nextGurgle = Time.unscaledTime + 20f; nextUse = Time.unscaledTime + 3f;
         Status.Value = "Used the toilet. Bathroom need cleared!";
     }
+    [ModAction(ShowInUI = false)] public static void TestAccident()
+    {
+        var character = Character();
+        if (!enabled || !character) { Status.Value = "Enable survival in a world first."; return; }
+        MakeAccident(character);
+    }
     public override void Update()
     {
         if (!enabled) return;
@@ -93,7 +101,7 @@ public sealed class SurvivalNeedsMod : BaseMod
         var elapsed = Mathf.Min(Time.unscaledDeltaTime, 1f) / 60f;
         hunger = Mathf.Max(0f, hunger - Mathf.Clamp(HungerRate.Value, 1f, 30f) * elapsed);
         thirst = Mathf.Max(0f, thirst - Mathf.Clamp(ThirstRate.Value, 1f, 30f) * elapsed);
-        bathroom = Mathf.Min(100f, bathroom + Mathf.Clamp(BathroomRate.Value, 1f, 30f) * elapsed);
+        bathroom = Mathf.Min(100f, bathroom + Mathf.Clamp(BathroomRate.Value, 1f, 120f) * elapsed);
         for (var i = Poops.Count - 1; i >= 0; i--)
             if (!Poops[i].Object || Time.unscaledTime >= Poops[i].Expires)
             { if (Poops[i].Object) UnityEngine.Object.Destroy(Poops[i].Object); Poops.RemoveAt(i); }
@@ -109,8 +117,7 @@ public sealed class SurvivalNeedsMod : BaseMod
         }
         if (bathroom >= 100f)
         {
-            CreateAccident(character); bathroom = 0f; nextGurgle = Time.unscaledTime + 20f;
-            Status.Value = "Oops! You had an accident.";
+            MakeAccident(character);
         }
         else if (bathroom >= 70f && Time.unscaledTime >= nextGurgle)
         {
@@ -127,20 +134,48 @@ public sealed class SurvivalNeedsMod : BaseMod
             if (toilet && (toilet.transform.position - character.transform.position).sqrMagnitude <= 16f) return true;
         return false;
     }
+    private static void MakeAccident(PlayerCharacter character)
+    {
+        CreateAccident(character);
+        bathroom = 0f; nextGurgle = Time.unscaledTime + 20f;
+        Status.Value = "Oops! You had an accident. Look behind your Wobbly.";
+        Plugin.Log?.LogInfo("Survival accident: spawned local physics poop behind the player.");
+    }
     private static void CreateAccident(PlayerCharacter character)
     {
         while (Poops.Count >= 20) { if (Poops[0].Object) UnityEngine.Object.Destroy(Poops[0].Object); Poops.RemoveAt(0); }
         var root = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         root.name = "Survival temporary poop";
-        var position = character.transform.position + Vector3.up * 0.4f;
-        if (Physics.Raycast(position + Vector3.up * 2f, Vector3.down, out var hit, 5f, ~0, QueryTriggerInteraction.Ignore) && !hit.transform.IsChildOf(character.transform)) position = hit.point + Vector3.up * 0.25f;
+        var feet = character.GetCenterFeetPosition();
+        var playerBody = character.GetPlayerBody();
+        var facing = playerBody ? playerBody.transform.forward : character.transform.forward;
+        facing = Vector3.ProjectOnPlane(facing, Vector3.up).normalized;
+        if (facing.sqrMagnitude < 0.01f) facing = Vector3.forward;
+        var position = feet - facing * 0.8f + Vector3.up * 0.35f;
+        var hits = Physics.RaycastAll(position + Vector3.up * 2f, Vector3.down, 6f, ~0, QueryTriggerInteraction.Ignore);
+        Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
+        foreach (var hit in hits)
+        {
+            if (!hit.collider || hit.transform.IsChildOf(character.transform) || hit.transform.IsChildOf(root.transform)) continue;
+            position = hit.point + Vector3.up * 0.25f; break;
+        }
         root.transform.position = position;
-        root.transform.localScale = new Vector3(0.48f, 0.30f, 0.48f);
+        root.transform.localScale = new Vector3(0.7f, 0.4f, 0.7f);
         var shader = Shader.Find("Standard") ?? Shader.Find("Sprites/Default");
         if (!poopMaterial && shader) { poopMaterial = new Material(shader); poopMaterial.color = new Color(0.32f, 0.14f, 0.045f); }
         if (poopMaterial) root.GetComponent<Renderer>().sharedMaterial = poopMaterial;
+        for (var layer = 0; layer < 2; layer++)
+        {
+            var piece = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            piece.name = "Poop swirl";
+            UnityEngine.Object.Destroy(piece.GetComponent<Collider>());
+            piece.transform.SetParent(root.transform, false);
+            piece.transform.localPosition = new Vector3(0f, 0.45f + layer * 0.38f, 0f);
+            piece.transform.localScale = Vector3.one * (layer == 0 ? 0.7f : 0.42f);
+            if (poopMaterial) piece.GetComponent<Renderer>().sharedMaterial = poopMaterial;
+        }
         var body = root.AddComponent<Rigidbody>(); body.mass = 0.7f;
-        body.AddForce((character.transform.forward * -1f + Vector3.up) * 1.5f, ForceMode.VelocityChange);
+        body.AddForce((-facing + Vector3.up) * 1.5f, ForceMode.VelocityChange);
         Poops.Add(new PoopEntry { Object = root, Expires = Time.unscaledTime + Mathf.Clamp(PoopLifetime.Value, 30f, 600f) });
     }
     private static void PlayGurgle()
