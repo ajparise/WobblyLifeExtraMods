@@ -68,6 +68,7 @@ public sealed class FreeCameraMod : BaseMod
     public override void Update()
     {
         if (!driver && input) StopCamera();
+        if (NukeTankMod.BlocksFreeCamera) { if (driver) StopCamera(); return; }
         if (!GameInstance.InstanceExists)
         {
             if (driver) StopCamera();
