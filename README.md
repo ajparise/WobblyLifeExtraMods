@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.40.0 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.41.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -25,6 +25,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Wobbly Music Player:** press 6 in a world for three generated original instrumental loops (dubstep, heavy metal and rock), or press 7 to play heavy metal directly. Includes volume, pause and stop controls.
 - **Party Games:** host Hot Potato or Tag for at least two players. The marked player passes it by approaching someone after moving apart; the host sees the timer and results.
 - **Survival:** hunger, thirst and bathroom meters; F5 eats an unlimited survival snack, F6 drinks from the unlimited survival bottle, and F10 uses a nearby toilet. The bathroom meter gurgles when urgent and creates temporary local physics poop after an accident. Sit on a toilet to clear it automatically. Empty hunger and thirst show meter warnings; they do not cause damage.
+- **Switchor Gun:** host selects two movable objects or players and presses 6 to exchange their positions, or searches connected players in its F2 panel. Players must leave vehicles and remote participants must install the mod. Player name tags temporarily contain the switch request while it is sent.
 - **Grappling Hook:** a toggle-fired, unlimited-range grappling hook with a visible claw, automatic reeling, and temporary wall-impact noclip protection.
 - **Power Clothes & Crazy Cars:** powered outfits and extreme vehicle abilities including speed, selective wall noclip, invisibility, missiles, and car jetpacks.
 - **Shrink Ray:** switch between shrink and grow modes with Q, restore individual targets, and resize world objects including vehicles, NPCs, buildings, trees, and roads.
@@ -167,4 +168,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.40.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.41.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.

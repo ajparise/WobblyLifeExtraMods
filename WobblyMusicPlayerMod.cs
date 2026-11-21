@@ -35,7 +35,7 @@ public sealed class WobblyMusicPlayerMod : BaseMod
 
     public override void Update()
     {
-        if (GameInstance.InstanceExists && Input.GetKeyDown(KeyCode.Alpha6) && (visible || !Cursor.visible))
+        if (!SwitchorGunMod.BlocksMusicHotkey && GameInstance.InstanceExists && Input.GetKeyDown(KeyCode.Alpha6) && (visible || !Cursor.visible))
         { if (visible) Close(); else Open(); }
         if (GameInstance.InstanceExists && Input.GetKeyDown(KeyCode.Alpha7) && (visible || !Cursor.visible)) Play(1);
         if (visible) { Cursor.visible = true; Cursor.lockState = CursorLockMode.None; }
