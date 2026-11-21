@@ -64,7 +64,7 @@ public sealed class RocketLauncherMod : BaseMod
     {
         return new Container(id,
             new TextWrapped("RocketLauncherHelp",
-                "Search for a small prop (fish, bombs, TNT, food, and other grabbable objects), equip, close F2, " +
+                "Search for a small prop (including candy canes and snowmen from the snow update), equip, close F2, " +
                 "then aim with the red crosshair and hold left-click. Contact bomb mode always fires TNT that explodes on impact."),
             new SearchableCombo("Projectile prop", Array.Empty<string>())
                 .WithItems(DisplayItems)
@@ -76,6 +76,10 @@ public sealed class RocketLauncherMod : BaseMod
                 ActionMenu(new Button("Unequip", Unequip), nameof(Unequip)),
                 ActionMenu(new Button("Fire once", Fire), nameof(Fire)),
                 ActionMenu(new Button("Refresh props", RefreshCatalog), nameof(RefreshCatalog))
+            ).WithContentWidth(),
+            new HStack("WinterProjectileActions",
+                ActionMenu(new Button("Select candy cane", SelectCandyCane), nameof(SelectCandyCane)),
+                ActionMenu(new Button("Select snowman", SelectSnowman), nameof(SelectSnowman))
             ).WithContentWidth(),
             new TextWrapped("RocketLauncherStatus", "").WithText(Status)
         );
@@ -168,7 +172,8 @@ public sealed class RocketLauncherMod : BaseMod
 
         var candidates = PropAddressResolver.Fallbacks(identity).ToList();
         Status.Value = $"Launching {label}...";
-        TryNetworkSpawn(candidates, 0, position, rotation, ray.direction, identity, label, ContactBombMode.Value);
+        TryNetworkSpawn(candidates, 0, position, rotation, ray.direction, identity, label, ContactBombMode.Value,
+            !ContactBombMode.Value && WinterProjectileKind(entry) != 0);
     }
 
     [ModAction(ShowInUI = false)]
@@ -220,12 +225,51 @@ public sealed class RocketLauncherMod : BaseMod
 
     private static bool IsProjectileProp(AssetDatabase.AssetEntry entry)
     {
-        if (!entry.IsGameObject || string.IsNullOrEmpty(entry.LoadKey) ||
-            string.IsNullOrEmpty(entry.NetworkAssetId) || !entry.HasComponent("Rigidbody"))
+        if (!entry.IsGameObject || string.IsNullOrEmpty(entry.LoadKey) || string.IsNullOrEmpty(entry.NetworkAssetId))
             return false;
+
+        if (WinterProjectileKind(entry) != 0) return true;
+        if (!entry.HasComponent("Rigidbody")) return false;
 
         return entry.HasComponent("GrabStat") || entry.HasComponent("Food") ||
                entry.HasComponent("Bomb") || entry.HasComponent("MoneyBag");
+    }
+
+    private static int WinterProjectileKind(AssetDatabase.AssetEntry entry)
+    {
+        if (entry == null) return 0;
+        foreach (var value in new[] { entry.Name, entry.LoadKey, entry.Address })
+        {
+            if (string.IsNullOrEmpty(value)) continue;
+            var slash = Math.Max(value.LastIndexOf('/'), value.LastIndexOf('\\'));
+            var name = slash >= 0 ? value.Substring(slash + 1) : value;
+            if (name.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase)) name = name.Substring(0, name.Length - 7);
+            var normalized = new string(name.Where(char.IsLetterOrDigit).Select(char.ToLowerInvariant).ToArray());
+            if (normalized == "candycane") return 1;
+            if (normalized == "snowman") return 2;
+        }
+        return 0;
+    }
+
+    [ModAction(ShowInUI = false)] public static void SelectCandyCane() => SelectWinterProjectile(1, "candy cane");
+    [ModAction(ShowInUI = false)] public static void SelectSnowman() => SelectWinterProjectile(2, "snowman");
+
+    private static void SelectWinterProjectile(int kind, string label)
+    {
+        var index = entries.FindIndex(entry => WinterProjectileKind(entry) == kind);
+        if (index < 0)
+        {
+            RefreshCatalog();
+            index = entries.FindIndex(entry => WinterProjectileKind(entry) == kind);
+        }
+        if (index < 0)
+        {
+            Status.Value = $"No network-spawnable {label} found. Wait for the updated asset scan, then refresh props.";
+            return;
+        }
+        SelectedIndex.Value = index;
+        ContactBombMode.Value = false;
+        Status.Value = $"Selected {label}. Equip the launcher and hold left-click.";
     }
 
     private static void TryNetworkSpawn(
@@ -236,7 +280,8 @@ public sealed class RocketLauncherMod : BaseMod
         Vector3 direction,
         PropIdentity identity,
         string label,
-        bool contactBomb)
+        bool contactBomb,
+        bool winterProjectile)
     {
         if (index >= candidates.Count)
         {
@@ -250,13 +295,13 @@ public sealed class RocketLauncherMod : BaseMod
             {
                 if (behaviour == null)
                 {
-                    TryNetworkSpawn(candidates, index + 1, position, rotation, direction, identity, label, contactBomb);
+                    TryNetworkSpawn(candidates, index + 1, position, rotation, direction, identity, label, contactBomb, winterProjectile);
                     return;
                 }
 
                 var spawned = behaviour.gameObject;
                 PropSpawnManager.Register(spawned, identity, null, null);
-                PrepareProjectile(spawned, direction, contactBomb);
+                PrepareProjectile(spawned, direction, contactBomb, winterProjectile);
                 Status.Value = $"Launched {label}.";
                 Plugin.Log?.LogInfo(Status.Value);
             },
@@ -268,12 +313,20 @@ public sealed class RocketLauncherMod : BaseMod
             bCheckChunk: true);
     }
 
-    private static void PrepareProjectile(GameObject spawned, Vector3 direction, bool contactBomb)
+    private static void PrepareProjectile(GameObject spawned, Vector3 direction, bool contactBomb, bool winterProjectile)
     {
         var bodies = spawned.GetComponentsInChildren<Rigidbody>(true);
+        if (winterProjectile && bodies.Length == 0)
+        {
+            if (spawned.GetComponentsInChildren<Collider>(true).Length == 0)
+                spawned.AddComponent<BoxCollider>();
+            bodies = new[] { spawned.AddComponent<Rigidbody>() };
+        }
         foreach (var body in bodies)
         {
-            if (!body || body.isKinematic) continue;
+            if (!body) continue;
+            if (winterProjectile && body.isKinematic) body.isKinematic = false;
+            if (body.isKinematic) continue;
             body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
             body.WakeUp();
             body.velocity = direction.normalized * Mathf.Max(1f, LaunchVelocity.Value);
