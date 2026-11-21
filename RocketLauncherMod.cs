@@ -173,7 +173,7 @@ public sealed class RocketLauncherMod : BaseMod
         var candidates = PropAddressResolver.Fallbacks(identity).ToList();
         Status.Value = $"Launching {label}...";
         TryNetworkSpawn(candidates, 0, position, rotation, ray.direction, identity, label, ContactBombMode.Value,
-            !ContactBombMode.Value && WinterProjectileKind(entry) != 0);
+            ContactBombMode.Value ? 0 : WinterProjectileKind(entry));
     }
 
     [ModAction(ShowInUI = false)]
@@ -281,7 +281,7 @@ public sealed class RocketLauncherMod : BaseMod
         PropIdentity identity,
         string label,
         bool contactBomb,
-        bool winterProjectile)
+        int winterProjectileKind)
     {
         if (index >= candidates.Count)
         {
@@ -295,13 +295,13 @@ public sealed class RocketLauncherMod : BaseMod
             {
                 if (behaviour == null)
                 {
-                    TryNetworkSpawn(candidates, index + 1, position, rotation, direction, identity, label, contactBomb, winterProjectile);
+                    TryNetworkSpawn(candidates, index + 1, position, rotation, direction, identity, label, contactBomb, winterProjectileKind);
                     return;
                 }
 
                 var spawned = behaviour.gameObject;
                 PropSpawnManager.Register(spawned, identity, null, null);
-                PrepareProjectile(spawned, direction, contactBomb, winterProjectile);
+                PrepareProjectile(spawned, direction, contactBomb, winterProjectileKind);
                 Status.Value = $"Launched {label}.";
                 Plugin.Log?.LogInfo(Status.Value);
             },
@@ -313,8 +313,9 @@ public sealed class RocketLauncherMod : BaseMod
             bCheckChunk: true);
     }
 
-    private static void PrepareProjectile(GameObject spawned, Vector3 direction, bool contactBomb, bool winterProjectile)
+    private static void PrepareProjectile(GameObject spawned, Vector3 direction, bool contactBomb, int winterProjectileKind)
     {
+        var winterProjectile = winterProjectileKind != 0;
         var bodies = spawned.GetComponentsInChildren<Rigidbody>(true);
         if (winterProjectile && bodies.Length == 0)
         {
@@ -332,7 +333,12 @@ public sealed class RocketLauncherMod : BaseMod
             body.velocity = direction.normalized * Mathf.Max(1f, LaunchVelocity.Value);
         }
 
-        IgnoreShooterCollisions(spawned);
+        if (winterProjectileKind == 1)
+        {
+            foreach (var grab in spawned.GetComponentsInChildren<GrabStat>(true))
+                if (grab) grab.SetIsGrabbable(true);
+        }
+        IgnoreShooterCollisions(spawned, winterProjectile);
 
         if (contactBomb)
         {
@@ -341,7 +347,7 @@ public sealed class RocketLauncherMod : BaseMod
         }
     }
 
-    private static void IgnoreShooterCollisions(GameObject projectile)
+    private static void IgnoreShooterCollisions(GameObject projectile, bool restoreAfterLaunch)
     {
         if (!GameInstance.InstanceExists) return;
 
@@ -351,12 +357,16 @@ public sealed class RocketLauncherMod : BaseMod
 
         var projectileColliders = projectile.GetComponentsInChildren<Collider>(true);
         var shooterColliders = character.GetComponentsInChildren<Collider>(true);
+        var ignoredPairs = restoreAfterLaunch ? new List<ProjectileCollisionPair>() : null;
         foreach (var projectileCollider in projectileColliders)
         foreach (var shooterCollider in shooterColliders)
         {
-            if (projectileCollider && shooterCollider)
-                Physics.IgnoreCollision(projectileCollider, shooterCollider, true);
+            if (!projectileCollider || !shooterCollider || Physics.GetIgnoreCollision(projectileCollider, shooterCollider)) continue;
+            Physics.IgnoreCollision(projectileCollider, shooterCollider, true);
+            ignoredPairs?.Add(new ProjectileCollisionPair(projectileCollider, shooterCollider));
         }
+        if (ignoredPairs != null && ignoredPairs.Count > 0)
+            projectile.AddComponent<RestoreProjectileCollisions>().Initialize(ignoredPairs);
     }
 
     private static string FriendlyName(AssetDatabase.AssetEntry entry)
@@ -393,6 +403,34 @@ public sealed class RocketLauncherMod : BaseMod
 
     private static void DrawRect(float x, float y, float width, float height)
         => GUI.DrawTexture(new Rect(x, y, width, height), Texture2D.whiteTexture);
+}
+
+internal readonly struct ProjectileCollisionPair
+{
+    internal readonly Collider Projectile;
+    internal readonly Collider Shooter;
+    internal ProjectileCollisionPair(Collider projectile, Collider shooter) { Projectile = projectile; Shooter = shooter; }
+}
+
+internal sealed class RestoreProjectileCollisions : MonoBehaviour
+{
+    private List<ProjectileCollisionPair> pairs;
+    private float restoreAt;
+    internal void Initialize(List<ProjectileCollisionPair> ignoredPairs)
+    {
+        pairs = ignoredPairs;
+        restoreAt = Time.unscaledTime + 1f;
+    }
+    private void Update() { if (Time.unscaledTime >= restoreAt) Restore(); }
+    private void OnDestroy() => Restore();
+    private void Restore()
+    {
+        if (pairs == null) return;
+        foreach (var pair in pairs)
+            if (pair.Projectile && pair.Shooter) Physics.IgnoreCollision(pair.Projectile, pair.Shooter, false);
+        pairs = null;
+        Destroy(this);
+    }
 }
 
 /// <summary>Host-side collision trigger attached only to contact-mode TNT projectiles.</summary>
