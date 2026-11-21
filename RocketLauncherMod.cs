@@ -30,6 +30,7 @@ public sealed class RocketLauncherMod : BaseMod
     private static List<AssetDatabase.AssetEntry> entries = new();
     private static AssetDatabase.AssetEntry tntEntry;
     private static float nextFireTime;
+    private static readonly List<GameObject> ChristmasTrees = new();
 
     public override string Name => "Rocket Prop Launcher";
 
@@ -64,8 +65,8 @@ public sealed class RocketLauncherMod : BaseMod
     {
         return new Container(id,
             new TextWrapped("RocketLauncherHelp",
-                "Search for a small prop (including candy canes and snowmen from the snow update), equip, close F2, " +
-                "then aim with the red crosshair and hold left-click. Contact bomb mode always fires TNT that explodes on impact."),
+                "Search for a prop or select a candy cane, snowman, or custom Christmas tree, equip, close F2, " +
+                "then aim with the red crosshair and hold left-click. The custom Christmas tree is a local temporary physics projectile. Contact bomb mode always fires TNT."),
             new SearchableCombo("Projectile prop", Array.Empty<string>())
                 .WithItems(DisplayItems)
                 .WithSelectedIndex(SelectedIndex),
@@ -79,7 +80,8 @@ public sealed class RocketLauncherMod : BaseMod
             ).WithContentWidth(),
             new HStack("WinterProjectileActions",
                 ActionMenu(new Button("Select candy cane", SelectCandyCane), nameof(SelectCandyCane)),
-                ActionMenu(new Button("Select snowman", SelectSnowman), nameof(SelectSnowman))
+                ActionMenu(new Button("Select snowman", SelectSnowman), nameof(SelectSnowman)),
+                ActionMenu(new Button("Select Christmas tree", SelectChristmasTree), nameof(SelectChristmasTree))
             ).WithContentWidth(),
             new TextWrapped("RocketLauncherStatus", "").WithText(Status)
         );
@@ -133,8 +135,9 @@ public sealed class RocketLauncherMod : BaseMod
             return;
         }
 
+        var customTree = !ContactBombMode.Value && DisplayItems.Value.Length > entries.Count && SelectedIndex.Value == entries.Count;
         var entry = ContactBombMode.Value ? tntEntry : SelectedEntry();
-        if (entry == null)
+        if (entry == null && !customTree)
         {
             Status.Value = ContactBombMode.Value
                 ? "TNT was not found in this game build. Refresh the projectile list."
@@ -158,6 +161,11 @@ public sealed class RocketLauncherMod : BaseMod
         var ray = camera.ScreenPointToRay(screenPoint);
         var position = ray.origin + ray.direction * Mathf.Max(1.5f, MuzzleDistance.Value);
         var rotation = Quaternion.LookRotation(ray.direction, camera.transform.up);
+        if (customTree)
+        {
+            LaunchChristmasTree(position, rotation, ray.direction);
+            return;
+        }
         var label = ContactBombMode.Value ? "contact bomb" : FriendlyName(entry);
 
         var identity = new PropIdentity
@@ -179,6 +187,7 @@ public sealed class RocketLauncherMod : BaseMod
     [ModAction(ShowInUI = false)]
     public static void RefreshCatalog()
     {
+        var treeSelected = DisplayItems.Value.Length > 0 && SelectedIndex.Value == entries.Count;
         var previousKey = SelectedIndex.Value >= 0 && SelectedIndex.Value < entries.Count
             ? entries[SelectedIndex.Value].LoadKey
             : null;
@@ -200,12 +209,12 @@ public sealed class RocketLauncherMod : BaseMod
             return string.Equals(name, entry.LoadKey, StringComparison.OrdinalIgnoreCase)
                 ? name
                 : $"{name}  —  {entry.LoadKey}";
-        }).ToArray();
+        }).Concat(new[] { "Christmas tree (custom, local)" }).ToArray();
 
         var restored = previousKey == null
             ? 0
             : entries.FindIndex(entry => string.Equals(entry.LoadKey, previousKey, StringComparison.OrdinalIgnoreCase));
-        SelectedIndex.Value = restored >= 0 ? restored : 0;
+        SelectedIndex.Value = treeSelected ? entries.Count : restored >= 0 ? restored : 0;
         Status.Value = entries.Count == 0
             ? "The asset database is not ready. Wait for its scan and refresh props."
             : $"Ready: {entries.Count:N0} searchable projectile props; contact TNT {(tntEntry == null ? "not found" : "ready")}.";
@@ -253,6 +262,35 @@ public sealed class RocketLauncherMod : BaseMod
 
     [ModAction(ShowInUI = false)] public static void SelectCandyCane() => SelectWinterProjectile(1, "candy cane");
     [ModAction(ShowInUI = false)] public static void SelectSnowman() => SelectWinterProjectile(2, "snowman");
+    [ModAction(ShowInUI = false)] public static void SelectChristmasTree()
+    {
+        if (DisplayItems.Value.Length == 0) RefreshCatalog();
+        SelectedIndex.Value = entries.Count;
+        ContactBombMode.Value = false;
+        Status.Value = "Selected custom Christmas tree (local only). Equip and hold left-click.";
+    }
+
+    private static void LaunchChristmasTree(Vector3 position, Quaternion rotation, Vector3 direction)
+    {
+        ChristmasTrees.RemoveAll(tree => !tree);
+        while (ChristmasTrees.Count >= 16)
+        {
+            if (ChristmasTrees[0]) UnityEngine.Object.Destroy(ChristmasTrees[0]);
+            ChristmasTrees.RemoveAt(0);
+        }
+        var root = new GameObject("Christmas tree projectile");
+        root.transform.SetPositionAndRotation(position, rotation);
+        var resources = root.AddComponent<ChristmasTreeProjectile>();
+        resources.Build();
+        var collider = root.AddComponent<CapsuleCollider>();
+        collider.center = new Vector3(0f, 1.15f, 0f); collider.height = 2.3f; collider.radius = 0.55f;
+        var body = root.AddComponent<Rigidbody>();
+        body.mass = 2f; body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        body.velocity = direction.normalized * Mathf.Max(1f, LaunchVelocity.Value);
+        IgnoreShooterCollisions(root, true);
+        ChristmasTrees.Add(root);
+        Status.Value = "Launched a custom Christmas tree (local only; disappears after 30 seconds).";
+    }
 
     private static void SelectWinterProjectile(int kind, string label)
     {
@@ -403,6 +441,91 @@ public sealed class RocketLauncherMod : BaseMod
 
     private static void DrawRect(float x, float y, float width, float height)
         => GUI.DrawTexture(new Rect(x, y, width, height), Texture2D.whiteTexture);
+}
+
+/// <summary>Small self-cleaning decorated tree; its visuals and physics are local to the shooter.</summary>
+internal sealed class ChristmasTreeProjectile : MonoBehaviour
+{
+    private readonly List<Material> materials = new();
+    private Mesh cone;
+    private float expiresAt;
+
+    internal void Build()
+    {
+        expiresAt = Time.unscaledTime + 30f;
+        var shader = Shader.Find("Standard") ?? Shader.Find("Sprites/Default");
+        var green = CreateMaterial(shader, new Color(0.04f, 0.38f, 0.12f));
+        var brown = CreateMaterial(shader, new Color(0.34f, 0.16f, 0.06f));
+        var red = CreateMaterial(shader, new Color(0.9f, 0.08f, 0.08f));
+        var gold = CreateMaterial(shader, new Color(1f, 0.78f, 0.12f));
+        var blue = CreateMaterial(shader, new Color(0.15f, 0.45f, 1f));
+        cone = CreateCone();
+        MakePrimitive("Trunk", PrimitiveType.Cylinder, new Vector3(0f, 0.25f, 0f), new Vector3(0.28f, 0.25f, 0.28f), brown);
+        for (var i = 0; i < 3; i++)
+        {
+            var foliage = new GameObject("Tree foliage");
+            foliage.transform.SetParent(transform, false);
+            foliage.transform.localPosition = new Vector3(0f, 0.35f + i * 0.48f, 0f);
+            foliage.transform.localScale = new Vector3(1.05f - i * 0.2f, 1.05f, 1.05f - i * 0.2f);
+            foliage.AddComponent<MeshFilter>().sharedMesh = cone;
+            foliage.AddComponent<MeshRenderer>().sharedMaterial = green;
+        }
+        for (var i = 0; i < 12; i++)
+        {
+            var angle = i * Mathf.PI * 2f / 6f;
+            var upper = i >= 6;
+            var radius = upper ? 0.25f : 0.39f;
+            MakePrimitive("Ornament", PrimitiveType.Sphere,
+                new Vector3(Mathf.Cos(angle) * radius, upper ? 1.32f : 0.84f, Mathf.Sin(angle) * radius),
+                Vector3.one * 0.13f, i % 3 == 0 ? red : i % 3 == 1 ? gold : blue);
+        }
+        MakePrimitive("Tree topper", PrimitiveType.Sphere, new Vector3(0f, 2.38f, 0f), Vector3.one * 0.18f, gold);
+    }
+
+    private Material CreateMaterial(Shader shader, Color color)
+    {
+        if (!shader) return null;
+        var material = new Material(shader) { color = color };
+        materials.Add(material); return material;
+    }
+
+    private void MakePrimitive(string name, PrimitiveType type, Vector3 position, Vector3 scale, Material material)
+    {
+        var part = GameObject.CreatePrimitive(type);
+        part.name = name;
+        var partCollider = part.GetComponent<Collider>();
+        if (partCollider) Destroy(partCollider);
+        part.transform.SetParent(transform, false);
+        part.transform.localPosition = position; part.transform.localScale = scale;
+        if (material) part.GetComponent<Renderer>().sharedMaterial = material;
+    }
+
+    private static Mesh CreateCone()
+    {
+        const int sides = 16;
+        var vertices = new Vector3[sides + 2];
+        var triangles = new int[sides * 6];
+        vertices[0] = Vector3.up; vertices[1] = Vector3.zero;
+        for (var i = 0; i < sides; i++)
+        {
+            var angle = i * Mathf.PI * 2f / sides;
+            vertices[i + 2] = new Vector3(Mathf.Cos(angle) * 0.5f, 0f, Mathf.Sin(angle) * 0.5f);
+            var next = 2 + (i + 1) % sides;
+            var offset = i * 6;
+            triangles[offset] = 0; triangles[offset + 1] = next; triangles[offset + 2] = i + 2;
+            triangles[offset + 3] = 1; triangles[offset + 4] = i + 2; triangles[offset + 5] = next;
+        }
+        var result = new Mesh { name = "Christmas tree cone", vertices = vertices, triangles = triangles };
+        result.RecalculateNormals(); result.RecalculateBounds(); return result;
+    }
+
+    private void Update() { if (Time.unscaledTime >= expiresAt) Destroy(gameObject); }
+    private void OnDestroy()
+    {
+        if (cone) Destroy(cone);
+        foreach (var material in materials) if (material) Destroy(material);
+        materials.Clear();
+    }
 }
 
 internal readonly struct ProjectileCollisionPair
