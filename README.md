@@ -1,6 +1,6 @@
 # Wobbly Life Extra Mods
 
-An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.43.1 adds these panels to the existing **Extra Mods** page:
+An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Version 1.44.0 adds these panels to the existing **Extra Mods** page:
 
 - **Universal Spawner (Extra):** compact searchable access to scanned GameObject prefabs.
 - **Wind Cannon:** an equippable, crosshair-aimed cone impulse that launches physics objects.
@@ -27,6 +27,7 @@ An extension plugin for the installed **lstwoMODS Wobbly Life** mod menu. Versio
 - **Survival:** hunger, thirst and bathroom meters; F5 eats an unlimited survival snack, F6 drinks from the unlimited survival bottle, and F10 uses a nearby toilet. The bathroom meter gurgles when urgent and creates temporary local physics poop after about one minute by default. Use **Test poop now** in the panel to try it immediately. Poop is local, not networked or saved. Sit on a toilet to clear the meter automatically. Empty hunger and thirst show meter warnings; they do not cause damage.
 - **Switchor Gun:** host selects two movable objects or players and presses 6 to exchange their positions, or searches connected players in its F2 panel. Players must leave vehicles and remote participants must install the mod. Player name tags temporarily contain the switch request while it is sent.
 - **Nuke & Minigun Tank:** spawn a custom armored body on the native networked tank; as host driver press 5 for a nuke, hold O for the minigun, or H for a mouse-guided nuke. The minigun reloads 1,000 rounds in 3.5 seconds; the two nuke modes share 100 rounds and reload in 5.3 seconds. The tank uses the game's original explosion effect when available, with a small black aiming dot and bullet tracers. The custom body, guided camera and weapon visuals are local to the host.
+- **Paradise Island Karate Dojo:** place a local dojo on a clear spot, practice on its mat by pressing K ten times, and earn white, yellow, green, red, blue and black belts after every five distinct in-game training days. Progress and placement are saved locally per save slot.
 - **Grappling Hook:** a toggle-fired, unlimited-range grappling hook with a visible claw, automatic reeling, and temporary wall-impact noclip protection.
 - **Power Clothes & Crazy Cars:** powered outfits and extreme vehicle abilities including speed, selective wall noclip, invisibility, missiles, and car jetpacks.
 - **Shrink Ray:** switch between shrink and grow modes with Q, restore individual targets, and resize world objects including vehicles, NPCs, buildings, trees, and roads.
@@ -169,4 +170,4 @@ The compiled plugin is written to `bin/Release/net472/WobblyLifeExtraMods.dll`.
 
 ## Troubleshooting
 
-Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.43.1 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
+Check `<Wobbly Life>\BepInEx\LogOutput.log` for `Wobbly Life Extra Mods 1.44.0 loaded`. If a searchable panel is empty, wait for the lstwoMODS asset scan to finish and click its refresh button.
