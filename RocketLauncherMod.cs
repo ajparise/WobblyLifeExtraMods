@@ -31,7 +31,6 @@ public sealed class RocketLauncherMod : BaseMod
     private static List<AssetDatabase.AssetEntry> entries = new();
     private static AssetDatabase.AssetEntry tntEntry;
     private static float nextFireTime;
-    private static readonly List<GameObject> ChristmasTrees = new();
     private static readonly List<LaunchedWobblyProjectile> LaunchedWobblies = new();
     private static int pendingWobblies;
     private const int MaximumLaunchedWobblies = 12;
@@ -70,7 +69,7 @@ public sealed class RocketLauncherMod : BaseMod
         return new Container(id,
             new TextWrapped("RocketLauncherHelp",
                 "Search for a prop or select a candy cane, snowman, Christmas tree, or Wobbly, equip, close F2, " +
-                "then aim with the red crosshair and hold left-click. The Wobbly wanders for 30 seconds, sits for three minutes, and despawns. Trees are local; Wobblies use a network NPC. Contact bomb mode always fires TNT."),
+                "then aim with the red crosshair and hold left-click. The Wobbly wanders for 30 seconds, sits for three minutes, and despawns. Christmas trees use a network physics prop; players need this mod to see the tree appearance. Contact bomb mode always fires TNT."),
             new SearchableCombo("Projectile prop", Array.Empty<string>())
                 .WithItems(DisplayItems)
                 .WithSelectedIndex(SelectedIndex),
@@ -221,7 +220,7 @@ public sealed class RocketLauncherMod : BaseMod
             return string.Equals(name, entry.LoadKey, StringComparison.OrdinalIgnoreCase)
                 ? name
                 : $"{name}  —  {entry.LoadKey}";
-        }).Concat(new[] { "Christmas tree (custom, local)", "Wobbly (30s wandering, 3m sitting)" }).ToArray();
+        }).Concat(new[] { "Christmas tree (networked)", "Wobbly (30s wandering, 3m sitting)" }).ToArray();
 
         var restored = previousKey == null
             ? 0
@@ -234,6 +233,7 @@ public sealed class RocketLauncherMod : BaseMod
 
     public override void Update()
     {
+        NetworkChristmasTrees.Update();
         if (!EquippedState.Value || Cursor.visible) return;
         if (Input.GetMouseButton(0)) Fire();
     }
@@ -279,7 +279,7 @@ public sealed class RocketLauncherMod : BaseMod
         if (DisplayItems.Value.Length == 0) RefreshCatalog();
         SelectedIndex.Value = entries.Count;
         ContactBombMode.Value = false;
-        Status.Value = "Selected custom Christmas tree (local only). Equip and hold left-click.";
+        Status.Value = "Selected network Christmas tree. Other players need this mod to see the tree.";
     }
 
     [ModAction(ShowInUI = false)] public static void SelectWobbly()
@@ -342,24 +342,53 @@ public sealed class RocketLauncherMod : BaseMod
 
     private static void LaunchChristmasTree(Vector3 position, Quaternion rotation, Vector3 direction)
     {
-        ChristmasTrees.RemoveAll(tree => !tree);
-        while (ChristmasTrees.Count >= 16)
+        if (!NetworkChristmasTrees.CanSpawn(out var reason)) { Status.Value = reason; return; }
+        var holder = AssetDatabase.Entries.Where(item => item.IsGameObject && !string.IsNullOrEmpty(item.LoadKey) &&
+            !string.IsNullOrEmpty(item.NetworkAssetId) && item.HasComponent("Rigidbody") && item.HasComponent("DynamicObject") &&
+            !item.HasComponent("Bomb") && !item.HasComponent("Food") && !item.HasComponent("MoneyBag") && WinterProjectileKind(item) == 0)
+            .OrderBy(item => TreeCarrierPreference(FriendlyName(item))).FirstOrDefault();
+        if (holder == null) { Status.Value = "No suitable network physics prop found. Wait for the asset scan and refresh props."; return; }
+        var identity = new PropIdentity { Kind = PropSourceKind.Addressable, Address = holder.LoadKey,
+            NetworkAssetId = holder.NetworkAssetId, Guid = holder.Guid, AssetName = FriendlyName(holder), Networked = true };
+        var candidates = PropAddressResolver.Fallbacks(identity).ToList();
+        NetworkChristmasTrees.Reserve();
+        SpawnNetworkChristmasTree(candidates, 0, position, rotation, direction, Mathf.Max(1f, LaunchVelocity.Value));
+    }
+
+    private static int TreeCarrierPreference(string name)
+    {
+        var lower = name.ToLowerInvariant();
+        if (lower.Contains("crate") || lower.Contains("box") || lower.Contains("barrel")) return 0;
+        return 1;
+    }
+
+    private static void SpawnNetworkChristmasTree(IReadOnlyList<string> candidates, int index, Vector3 position,
+        Quaternion rotation, Vector3 direction, float speed)
+    {
+        if (index >= candidates.Count) { NetworkChristmasTrees.CancelReservation(); Status.Value = "Could not spawn a network physics prop for the tree."; return; }
+        NetworkPrefab.SpawnNetworkPrefab(candidates[index], behaviour =>
         {
-            if (ChristmasTrees[0]) UnityEngine.Object.Destroy(ChristmasTrees[0]);
-            ChristmasTrees.RemoveAt(0);
-        }
-        var root = new GameObject("Christmas tree projectile");
-        root.transform.SetPositionAndRotation(position, rotation);
-        var resources = root.AddComponent<ChristmasTreeProjectile>();
-        resources.Build();
-        var collider = root.AddComponent<CapsuleCollider>();
-        collider.center = new Vector3(0f, 1.15f, 0f); collider.height = 2.3f; collider.radius = 0.55f;
-        var body = root.AddComponent<Rigidbody>();
-        body.mass = 2f; body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        body.velocity = direction.normalized * Mathf.Max(1f, LaunchVelocity.Value);
-        IgnoreShooterCollisions(root, true);
-        ChristmasTrees.Add(root);
-        Status.Value = "Launched a custom Christmas tree (local only; disappears after 30 seconds).";
+            if (!behaviour) { SpawnNetworkChristmasTree(candidates, index + 1, position, rotation, direction, speed); return; }
+            NetworkChristmasTrees.CancelReservation();
+            var network = behaviour.networkObject;
+            var root = behaviour.gameObject;
+            var body = root.GetComponentInChildren<Rigidbody>(true);
+            if (!GameInstance.InstanceExists || !PropSpawnManager.IsServer || network == null || !body || body.isKinematic)
+            {
+                if (network != null && network.IsServer()) network.Destroy(); else UnityEngine.Object.Destroy(root);
+                Status.Value = "The tree's network physics prop was unavailable."; return;
+            }
+            body.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            body.WakeUp(); body.velocity = direction.normalized * speed;
+            IgnoreShooterCollisions(root, true);
+            if (!NetworkChristmasTrees.Register(network))
+            {
+                network.Destroy(); Status.Value = "Could not advertise the tree; player name is being used by another mode."; return;
+            }
+            var lifetime = root.AddComponent<NetworkChristmasTreeLifetime>();
+            lifetime.Initialize(network);
+            Status.Value = "Launched network Christmas tree. Other players need this mod to see its appearance.";
+        }, position: position, rotation: rotation, owner: null, bUseChunkSystem: true, bSendTransform: true, bCheckChunk: true);
     }
 
     private static void SelectWinterProjectile(int kind, string label)
@@ -520,9 +549,9 @@ internal sealed class ChristmasTreeProjectile : MonoBehaviour
     private Mesh cone;
     private float expiresAt;
 
-    internal void Build()
+    internal void Build(bool networked = false)
     {
-        expiresAt = Time.unscaledTime + 30f;
+        expiresAt = networked ? float.PositiveInfinity : Time.unscaledTime + 30f;
         var shader = Shader.Find("Standard") ?? Shader.Find("Sprites/Default");
         var green = CreateMaterial(shader, new Color(0.04f, 0.38f, 0.12f));
         var brown = CreateMaterial(shader, new Color(0.34f, 0.16f, 0.06f));
@@ -596,6 +625,133 @@ internal sealed class ChristmasTreeProjectile : MonoBehaviour
         foreach (var material in materials) if (material) Destroy(material);
         materials.Clear();
     }
+}
+
+/// <summary>Advertises networked carrier IDs so modded clients can attach the tree visuals.</summary>
+internal static class NetworkChristmasTrees
+{
+    private const string Marker = " [EXTRAMODS_TREES:";
+    private const int Limit = 16;
+    private static readonly Dictionary<uint, HawkNetworkObject> Active = new();
+    private static PlayerController carrier;
+    private static string originalName;
+    private static string lastPublished;
+    private static int pending;
+    private static float nextScan;
+
+    internal static bool CanSpawn(out string reason)
+    {
+        reason = "";
+        if (Active.Count + pending >= Limit) { reason = "Christmas tree limit reached (16); wait for one to disappear."; return false; }
+        if (!GameInstance.InstanceExists || !PropSpawnManager.IsServer) { reason = "Host a world before launching network trees."; return false; }
+        var local = GameInstance.Instance.GetFirstLocalPlayerController();
+        if (!local) { reason = "The host player is not ready."; return false; }
+        var name = local.GetPlayerName() ?? "";
+        if (name.StartsWith("[SWITCH:") || name.StartsWith("[PARTY IT] ") || name.StartsWith("[H&S SEEKER] "))
+        { reason = "Finish the current Switchor, Tag, or Hide & Seek name action before launching trees."; return false; }
+        if (carrier && carrier != local) { reason = "Previous tree session is still being cleaned up."; return false; }
+        if (carrier && lastPublished != null && name != lastPublished && name != originalName)
+        { reason = "Wait for the current player-name action to finish before launching trees."; return false; }
+        if (!carrier && name.Contains(Marker)) { reason = "A previous tree name marker is still present; restart the world first."; return false; }
+        return true;
+    }
+    internal static void Reserve() => pending++;
+    internal static void CancelReservation() => pending = Mathf.Max(0, pending - 1);
+    internal static bool Register(HawkNetworkObject network)
+    {
+        if (!CanSpawn(out _)) return false;
+        if (!carrier)
+        {
+            carrier = GameInstance.Instance.GetFirstLocalPlayerController();
+            originalName = carrier.GetPlayerName() ?? "Player";
+        }
+        var id = network.GetNetworkID();
+        Active[id] = network;
+        if (!Publish()) { Active.Remove(id); return false; }
+        AttachVisual(network);
+        return true;
+    }
+    internal static void Forget(uint id)
+    {
+        if (!Active.Remove(id)) return;
+        Publish();
+    }
+    private static bool Publish()
+    {
+        if (!carrier || !PropSpawnManager.IsServer) return false;
+        var current = carrier.GetPlayerName() ?? "";
+        if (lastPublished != null && current != lastPublished && current != originalName) return false;
+        var name = Active.Count == 0 ? originalName : originalName + Marker + string.Join(",", Active.Keys.Select(id => id.ToString()).ToArray()) + "]";
+        if (current != name) carrier.SetServerPlayerName(name);
+        lastPublished = name;
+        if ((carrier.GetPlayerName() ?? "") != name) return false;
+        if (Active.Count == 0) { carrier = null; originalName = null; lastPublished = null; }
+        return true;
+    }
+    internal static void Update()
+    {
+        if (!GameInstance.InstanceExists)
+        {
+            Shutdown(); return;
+        }
+        if (Time.unscaledTime < nextScan) return;
+        nextScan = Time.unscaledTime + 0.2f;
+        if (carrier && PropSpawnManager.IsServer) Publish();
+        var manager = HawkNetworkManager.DefaultInstance;
+        if (manager == null) return;
+        foreach (var player in GameInstance.Instance.GetPlayerControllers())
+        {
+            if (!player) continue;
+            var name = player.GetPlayerName() ?? "";
+            var start = name.LastIndexOf(Marker, StringComparison.Ordinal);
+            if (start < 0) continue;
+            start += Marker.Length;
+            var end = name.IndexOf(']', start);
+            if (end < 0) continue;
+            var ids = name.Substring(start, end - start).Split(',');
+            for (var i = 0; i < ids.Length && i < Limit; i++)
+                if (uint.TryParse(ids[i], out var id))
+                {
+                    var network = manager.FindNetworkObject(id);
+                    if (network != null) AttachVisual(network);
+                }
+        }
+    }
+    private static void AttachVisual(HawkNetworkObject network)
+    {
+        var behaviour = network.GetNetworkBehaviour();
+        if (!behaviour || behaviour.GetComponentInChildren<ChristmasTreeProjectile>(true)) return;
+        var body = behaviour.GetComponentInChildren<Rigidbody>(true);
+        if (!body) return;
+        foreach (var renderer in behaviour.GetComponentsInChildren<Renderer>(true)) if (renderer) renderer.enabled = false;
+        var visual = new GameObject("Network Christmas tree visual");
+        visual.transform.SetParent(body.transform, false);
+        visual.AddComponent<ChristmasTreeProjectile>().Build(true);
+    }
+    internal static void Shutdown()
+    {
+        if (GameInstance.InstanceExists && carrier && PropSpawnManager.IsServer && lastPublished != null && carrier.GetPlayerName() == lastPublished)
+            carrier.SetServerPlayerName(originalName ?? "Player");
+        if (GameInstance.InstanceExists && PropSpawnManager.IsServer)
+            foreach (var network in Active.Values.ToArray()) if (network != null && network.IsServer()) network.Destroy();
+        Active.Clear(); pending = 0; carrier = null; originalName = null; lastPublished = null;
+    }
+}
+
+internal sealed class NetworkChristmasTreeLifetime : MonoBehaviour
+{
+    private HawkNetworkObject network;
+    private uint id;
+    private float expiresAt;
+    internal void Initialize(HawkNetworkObject target) { network = target; id = target.GetNetworkID(); expiresAt = Time.unscaledTime + 30f; }
+    private void Update()
+    {
+        if (Time.unscaledTime < expiresAt) return;
+        enabled = false;
+        NetworkChristmasTrees.Forget(id);
+        if (network != null && network.IsServer()) network.Destroy(); else Destroy(gameObject);
+    }
+    private void OnDestroy() => NetworkChristmasTrees.Forget(id);
 }
 
 internal readonly struct ProjectileCollisionPair
