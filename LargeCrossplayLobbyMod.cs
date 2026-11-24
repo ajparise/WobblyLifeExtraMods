@@ -46,7 +46,13 @@ public sealed class LargeCrossplayLobbyMod : BaseMod
             PatchDiagnostic(harmony, "OnPlayerNotAccepted", nameof(NotAcceptedPrefix));
             PatchDiagnostic(harmony, "OnAuthenticationFailed", nameof(AuthenticationFailedPrefix));
             PatchDiagnostic(harmony, "OnPlayerDisconnected", nameof(DisconnectedPrefix));
+            PatchDiagnostic(harmony, "DisconnectPlayer", nameof(KickPrefix));
             var eosType = AccessTools.TypeByName("HawkNetworking.EOSNetworkManager");
+            if (eosType != null)
+            {
+                PatchEosDiagnostic(harmony, eosType, "OnPeerConnectionClosed", nameof(PeerClosedPrefix));
+                PatchEosDiagnostic(harmony, eosType, "HandleDoSendError", nameof(SendErrorPrefix));
+            }
             var eosHost = eosType == null ? null : AccessTools.Method(eosType, "HostServer", new[] { typeof(int) });
             if (eosHost != null)
             {
@@ -61,6 +67,32 @@ public sealed class LargeCrossplayLobbyMod : BaseMod
             Status.Value = "Lobby capacity patch failed; see BepInEx log.";
             Plugin.Log?.LogError("Large Crossplay lobby patch failed: " + exception);
         }
+    }
+    private static void PatchEosDiagnostic(Harmony harmony, Type eosType, string targetName, string patchName)
+    {
+        var target = AccessTools.DeclaredMethod(eosType, targetName);
+        if (target == null) { Plugin.Log?.LogWarning("Crossplay diagnostic unavailable: " + targetName); return; }
+        try { harmony.Patch(target, prefix: new HarmonyMethod(typeof(LargeCrossplayLobbyMod), patchName)); }
+        catch (Exception exception) { Plugin.Log?.LogWarning("Crossplay diagnostic " + targetName + " failed: " + exception.Message); }
+    }
+    private static void KickPrefix(HawkNetworkManager __instance, HawkConnection __0, int __1)
+    {
+        if (!__instance || !__instance.IsServer()) return;
+        Plugin.Log?.LogWarning($"Large Crossplay diagnostic: host is disconnecting connection {(__0 == null ? -1 : __0.Id)}, reason={__1}; caller: {new System.Diagnostics.StackTrace(1, false)}");
+    }
+    private static void PeerClosedPrefix(object[] __args)
+    {
+        try
+        {
+            var info = __args != null && __args.Length > 0 ? __args[0] : null;
+            var reason = info?.GetType().GetProperty("Reason")?.GetValue(info, null);
+            Plugin.Log?.LogWarning("Large Crossplay diagnostic: EOS peer connection closed; reason=" + (reason ?? "unavailable"));
+        }
+        catch (Exception exception) { Plugin.Log?.LogWarning("Crossplay closure diagnostic failed: " + exception.Message); }
+    }
+    private static void SendErrorPrefix(HawkConnection __0)
+    {
+        Plugin.Log?.LogWarning($"Large Crossplay diagnostic: EOS send error for connection {(__0 == null ? -1 : __0.Id)}.");
     }
     private static void PatchDiagnostic(Harmony harmony, string targetName, string patchName)
     {
