@@ -9,7 +9,7 @@ public sealed class Plugin : BaseUnityPlugin
 {
     public const string Guid = "com.aj.wobblylife.extramods";
     public const string Name = "Wobbly Life Extra Mods";
-    public const string Version = "1.45.0";
+    public const string Version = "1.46.0";
 
     internal static BepInEx.Logging.ManualLogSource Log { get; private set; }
 
@@ -58,6 +58,7 @@ public sealed class Plugin : BaseUnityPlugin
         SwitchorGunMod.DrawOverlay();
         NukeTankMod.DrawOverlay();
         KarateDojoMod.DrawOverlay();
+        LargeCrossplayLobbyMod.DrawRoster();
     }
 
     private void OnDestroy()
@@ -78,6 +79,7 @@ public sealed class Plugin : BaseUnityPlugin
         NetworkChristmasTrees.Shutdown();
         NukeTankMod.Shutdown();
         KarateDojoMod.Shutdown();
+        LargeCrossplayLobbyMod.Shutdown();
     }
 
     internal static UnityEngine.Coroutine RunCoroutine(System.Collections.IEnumerator routine)
